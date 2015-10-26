@@ -36,7 +36,7 @@ h1 {
   z-index: -1;
 }
 
-#forceMe {
+#forceMe, #forceMe2 {
   width: 93px;
   height: 93px;
   background: rgba(255,255,255,0.7);
@@ -48,6 +48,9 @@ h1 {
   transition: -webkit-transform .1s;
 }
 
+#forceMe2{
+    top:150px;
+}
 @media (min-width: 414px) {
   #forceMe {
     top: 450px;
