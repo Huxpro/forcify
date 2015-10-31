@@ -20,6 +20,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     }
     init();
 
+    // handle event delegation from document
     function handleDelegate(nativeEvent) {
         //console.log(nativeEvent.target);
         var _target = nativeEvent.target;
@@ -34,7 +35,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
     }
 
-    // CLASS
+    /**
+     *  class QuickForce
+     */
 
     var QuickForce = (function () {
         /**
@@ -112,9 +115,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
             /**
              * Bind event
-             * @param  {[type]} event   [description]
-             * @param  {[type]} handler [description]
-             * @return {[type]}         [description]
+             * @param  {String} event
+             * @param  {Fn}     handler
+             * @return {Node}
              */
             value: function on(event, handler) {
                 var handlers = this.handlers;
@@ -141,7 +144,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         console.log(nativeEvent);
         nativeEvent.preventDefault();
 
-        // wrap type.
+        // Type Wrapper
         if (type == 'touchend') {
             _instance.touch = null;
         }

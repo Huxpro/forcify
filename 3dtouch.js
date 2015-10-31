@@ -3,31 +3,26 @@ var element2 = document.getElementById('forceMe2');
 var forceValueOutput = document.getElementById('forceValue');
 var background = document.getElementById('background');
 var touch = null;
+import Forcify from './forcify';
 
 //addForceTouchToElement(element);
 
 // Hux Forcer.js
 
-var qf = new QuickForce(document.querySelector("#forceMe"));
+var qf = new Forcify(document.querySelector("#forceMe"));
 qf.on('forcechange', function(e){
     //console.log(e.force)
-    renderElement(e.force)
+    renderElement(e.force, element)
 });
 
-var qf2 = new QuickForce(document.querySelector("#forceMe2"));
+var qf2 = new Forcify(document.querySelector("#forceMe2"));
 qf2.on('forcechange', function(e){
     //console.log(e.force)
-    renderElement2(e.force)
+    renderElement(e.force, element2)
 });
 
-function renderElement(forceValue) {
-  element.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
-  background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
-  forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
-}
-
-function renderElement2(forceValue) {
-  element2.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
+function renderElement(forceValue, _element) {
+  _element.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
   background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
   forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
 }
