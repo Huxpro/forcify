@@ -3,7 +3,7 @@ var element2 = document.getElementById('forceMe2');
 var forceValueOutput = document.getElementById('forceValue');
 var background = document.getElementById('background');
 var touch = null;
-import Forcify from './forcify';
+import Forcify from '../src/forcify';
 
 //addForceTouchToElement(element);
 
@@ -22,7 +22,7 @@ qf2.on('forcechange', function(e){
 });
 
 function renderElement(forceValue, _element) {
-  _element.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
-  background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
-  forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
+    _element.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
+    background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
+    forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
 }

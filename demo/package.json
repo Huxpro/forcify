@@ -1,0 +1,40 @@
+{
+  "name": "forcify-demo",
+  "version": "0.1.0",
+  "description": "forcify demo",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "scripts": {
+    "start": "webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors",
+    "build": "webpack --config webpack-production.config.js --progress --colors"
+  },
+  "devDependencies": {
+    "babel-core": "^5.8.21",
+    "babel-eslint": "^4.0.5",
+    "babel-loader": "^5.3.2",
+    "css-loader": "^0.19.0",
+    "eslint": "^1.1.0",
+    "eslint-loader": "^1.0.0",
+    "eslint-plugin-react": "^3.2.2",
+    "html-webpack-plugin": "^1.6.1",
+    "node-sass": "^3.3.3",
+    "react-hot-loader": "^1.2.8",
+    "sass-loader": "^3.0.0",
+    "style-loader": "^0.12.4",
+    "transfer-webpack-plugin": "^0.1.4",
+    "webpack": "^1.12.2",
+    "webpack-dev-server": "^1.10.1"
+  },
+  "dependencies": {
+    "blueimp-md5": "^1.1.1",
+    "fetch": "^0.3.6",
+    "material-design-icons": "^2.0.0",
+    "material-ui": "^0.11.1",
+    "react": ">=0.13",
+    "react-router": "^0.13.0",
+    "react-tap-event-plugin": "^0.1.3",
+    "reqwest": "^1.1.6"
+  }
+}

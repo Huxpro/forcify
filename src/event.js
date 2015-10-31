@@ -153,6 +153,9 @@ Forcify.emitQFEvent = function(_instance, nativeEvent){
 // ES6 export
 export default Forcify;
 
+// test
+window.Forcify = Forcify;
+
 // Module
 // if (typeof define === 'function' && typeof define.amd === 'object' && define.amd) {
 // 	// AMD. Register as an anonymous module.
