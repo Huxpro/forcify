@@ -7,7 +7,7 @@
     "url": ""
   },
   "scripts": {
-    "start": "webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors",
+    "start": "webpack-dev-server --config webpack-dev-server.config.js --progress --host 0.0.0.0 --port 3020 --inline --colors",
     "build": "webpack --config webpack-production.config.js --progress --colors"
   },
   "devDependencies": {

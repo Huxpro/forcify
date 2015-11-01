@@ -26,13 +26,13 @@ h1 {
   transform: translateX(-50%);
   width: 100vw;
   max-width: 414px;
-  min-width: 375px;
+  min-width: 320px;
   height: 100vh;
   background-image: url(bg.jpg);
   background-repeat: no-repeat;
   background-position: top left;
   background-size: 100% auto;
-  transition: -webkit-filter .5s;
+  transition: -webkit-filter .1s;
   z-index: -1;
 }
 
@@ -44,8 +44,13 @@ h1 {
   position: absolute;
   top: 408px;
   left: 50%;
+  -webkit-touch-callout: none;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transition: -webkit-transform .1s;
+  /*transition: -webkit-transform .1s;*/
+}
+
+#forceMe2 {
+    transition: -webkit-transform .1s;
 }
 
 #forceMe2{
