@@ -33,7 +33,7 @@ export default class Touch{
              * Events from Chrome Mobile include force:1 and webkitForce:1,
              *
              * Events from Nexus5 Chrome support a very weird force value!!
-             * It's seems like the value is about the area of the touch..
+             * which seems depend on the area of the finger touched to screen.
              */
 
             // So we use a dynamic detection to do that:
@@ -44,13 +44,14 @@ export default class Touch{
 
             // detect unsupported iPhone
             let _force = nativeEvent.targetTouches[0].force || 0
-            if(_force > 0 && _force < 1 && !Forcify.detection.ANDROID) Forcify.detection.FORCE = true;
+            if(_force > 0 && _force < 1 && !Forcify.detection.ANDROID)
+            Forcify.detection.TOUCH3D = true;
 
             // If forceValue == 0, Forcify sent events to
             // both handlePress and handleTouch
-            //alert(nativeEvent.targetTouches[0].force)
+            // alert(nativeEvent.targetTouches[0].force)
             if(!nativeEvent.targetTouches[0].force){    // undefined or 0
-                if(!Forcify.detection.FORCE){
+                if(!Forcify.detection.TOUCH3D){
                     console.log("send into handlePress..");
                     _instance.handlePress(_instance, nativeEvent);
                 }
@@ -80,10 +81,11 @@ export default class Touch{
             var touchEvent = this;
             var force = 0;
             let sendEvent = true;
+
             if(_instance.touch) {
                 force = touchEvent.force;
                 // dynamic detection
-                if(force > 0 && force < 1) Forcify.detection.FORCE = true;
+                if(force > 0 && force < 1) Forcify.detection.TOUCH3D = true;
 
                 // polling
                 setTimeout(_instance.pollingTouchForce.bind(_instance.touch, _instance, nativeEvent), 10);
@@ -103,7 +105,6 @@ export default class Touch{
                 let _e = { force, nativeEvent };
                 _instance.invokeHandlers(_instance, _e)
             }
-
         }
     }
 }

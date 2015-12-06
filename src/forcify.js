@@ -5,8 +5,10 @@
  *  created by @huxpro
  */
 
+
 // uuid
 let _uid = 0;
+
 
 // polyfill
 Object.extend = Object.assign ? Object.assign : (function(copy, src){
@@ -16,29 +18,31 @@ Object.extend = Object.assign ? Object.assign : (function(copy, src){
     return copy;
 })
 
+
 /**
- * class Forcify
+ * @class Forcify
  */
-class Forcify{
+export default class Forcify{
+
     /**
-     * constructor. create a new Forcify Object.
-     * @param  {Node}   element     TODO: support Selector
-     * @param  {Object} options
-     * @return {Forcify}            Instance of Forcify, you can call it 'Forcify Object'
+     * @constructor                     create a new Forcify Object.
+     * @param  {Node}   element         TODO: support Selector
+     * @param  {Object} options         customize options
+     * @return {Forcify}                Instance of Forcify, you can call it 'Forcify Object'
      */
     constructor(element, options){
-        this.uid = ++_uid;          // uid
-        this.element = element;     // cache element
-        this.handlers = {};         // event handlers
-        this.touch = null;          // unique touch id
-        this.timer = null;          // unique press timer
-        this._pressTimeStamp = 0;   // unique press-time stamp
+        this.uid = ++_uid;              // uid
+        this.element = element;         // cache element
+        this.handlers = {};             // event handlers
+        this.touch = null;              // unique touch id
+        this.timer = null;              // unique press timer
+        this._pressTimeStamp = 0;       // unique press-time stamp
 
         // Instance Options.
         let _temp = Object.extend({}, Forcify.defaults)
         this.options = Object.extend(_temp, options);
 
-        // Set uid to DOM object for future use. Decrease time complexity
+        // Set uid to DOM object for cache use. Decrease time complexity
         this.element.__fuid__ = this.uid;
 
         // Cache forcify instance (this)
@@ -48,8 +52,8 @@ class Forcify{
 
     /**
      * Bind event
-     * @param  {String} event      Type of event
-     * @param  {fn}     handler    Event handlers, TODO: support fn[]
+     * @param  {String} event           Type of event
+     * @param  {fn}     handler         Event handlers, TODO: support fn[]
      * @return {Forcify}
      */
     on(event, handler){
@@ -64,7 +68,7 @@ class Forcify{
     /**
      * Invoke event handlers
      * @param  {Forcify} _instance
-     * @param  {Object}  e         Forcify custom event object
+     * @param  {Object}  e              Forcify custom event object
      * @return {null}
      */
     invokeHandlers(_instance, e){
@@ -84,10 +88,6 @@ new (require('./press'))(Forcify)
 new (require('./delegate'))(Forcify)
 
 
-// Cache elements reference
-Forcify.cache = {}
-
-
 // Static Members
 Forcify.emitEvent = function(_instance, nativeEvent){
     let force = 0;
@@ -95,24 +95,26 @@ Forcify.emitEvent = function(_instance, nativeEvent){
 
     console.log(type);
     console.log(nativeEvent);
-    nativeEvent.preventDefault();   // !important
+    nativeEvent.preventDefault();           // !important
 
-    // Force Recognizer
+    // Event Recognizer
     if(type == "touchend" || type == "touchmove" || type == "touchstart"){
         _instance.handleTouch(_instance, nativeEvent);
     }
 
     if(type == 'webkitmouseforcewillbegin' || type == 'webkitmouseforcechanged'){
-        // if these event triggered, this is OSX.
-        Forcify.detection.OSX = true;
+        Forcify.detection.OSXFORCE = true;       // if these event triggered, this is OSX.
         _instance.handleMouseForce(_instance, nativeEvent);
     }
     if(type == 'mousedown' || type == 'mouseup'){
-        if(Forcify.detection.OSX) return;   // OSX should skip this
+        if(Forcify.detection.OSXFORCE) return;   // OSX should skip this
         _instance.handlePress(_instance, nativeEvent);
     }
-
 }
+
+
+// Cache elements reference
+Forcify.cache = {}
 
 
 // Default Options
@@ -120,28 +122,29 @@ Forcify.defaults = {
     /**
      * Delay to trigger fake Force Touch
      * @type {Number}
-     * @default 200
+     * @default 200(ms)
      */
     LONG_PRESS_DELAY : 200,
 
     /**
      * Duration from MIN to MAX of the fake Force Touch
      * @type {Number}
-     * @default 1000
+     * @default 1000(ms)
      */
     LONG_PRESS_DURATION: 100,
 }
 
 
+// Detections
 Forcify.detection = {
     /**
-     * Unfortunately there is not a feature detection for Force so far, so Forcify use a dynamic detection to detect it
+     * Unfortunately there is not a feature detection for 3DTouch so far, so Forcify use a dynamic detection to detect it
      * If Forcify detects that force is support, all hacking stop
      *
      * @type {Boolean}
      * @default false
      */
-    FORCE: false,
+    TOUCH3D: false,
 
     /**
      * OSX support real webkit force touch
@@ -149,10 +152,11 @@ Forcify.detection = {
      * @type {Boolean}
      * @default false
      */
-    OSX: false,
+    OSXFORCE: false,
 
     /**
-     * Chrome give any touchevent a force with value:1. Forcify has to hack it.
+     * Chrome give any touchevent a 'force' property with value: 1.
+     * Forcify has to hack it.
      *
      * @type {Boolean}
      * @default false
@@ -160,7 +164,8 @@ Forcify.detection = {
     CHROME: false,
 
     /**
-     * Android is really acts odd, different and difficult to handle, so Forcify has to use UA detection.
+     * Android performs really odd, which performs different in diff devices.
+     * Forcify has to use UA detection to handle them.
      *
      * @type {Boolean}
      * @default false
@@ -168,21 +173,6 @@ Forcify.detection = {
     ANDROID: navigator.userAgent.match(/(Android);?[\s\/]+([\d.]+)?/),
 }
 
-// ES6 export
-export default Forcify;
 
 // debugging use.
-window.Forcify = Forcify;
-
-// Module
-// if (typeof define === 'function' && typeof define.amd === 'object' && define.amd) {
-// 	// AMD. Register as an anonymous module.
-// 	define(function() {
-// 		return Forcify;
-// 	});
-// } else if (typeof module !== 'undefined' && module.exports) {
-// 	//module.exports = Forcify.attach;
-// 	module.exports.Forcify = Forcify;
-// } else {
-// 	window.Forcify = Forcify;
-// }
+// window.Forcify = Forcify;

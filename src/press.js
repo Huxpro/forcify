@@ -14,9 +14,9 @@ export default class Press{
 
         // fallback to long press (mouse || touch)
         fn.handlePress = function(_instance, nativeEvent){
-            let delay = _instance.options.LONG_PRESS_DELAY;
-            let duration = _instance.options.LONG_PRESS_DURATION;
-            let type = nativeEvent.type;
+            let delay       = _instance.options.LONG_PRESS_DELAY;
+            let duration    = _instance.options.LONG_PRESS_DURATION;
+            let type        = nativeEvent.type;
 
             if(type === "mousedown" || type === "touchstart"){
                 _instance._pressTimeStamp = Date.now();

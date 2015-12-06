@@ -1,11 +1,21 @@
+/**
+ * Forcify Demo
+ * use with CommonJS
+ *
+ * If you want to run CommonJS in browser, you need build tool
+ * this example is built by webpack, you can use browserify as well.
+ */
+
+
+let Forcify = require('../build/forcify.js')
+
+
 var element = document.getElementById('forceMe');
 var element2 = document.getElementById('forceMe2');
 var forceValueOutput = document.getElementById('forceValue');
 var background = document.getElementById('background');
 var touch = null;
-import Forcify from '../src/forcify';
 
-//addForceTouchToElement(element);
 
 // Hux Forcer.js
 
