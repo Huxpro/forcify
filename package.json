@@ -9,7 +9,7 @@
       "force touch",
       "force"
   ],
-  "main": "build/forcify.min.js",
+  "main": "dist/forcify.min.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Huxpro/Forcify"

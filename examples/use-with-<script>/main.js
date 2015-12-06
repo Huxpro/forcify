@@ -1,5 +1,5 @@
 /**
- * Forcify Demo
+ * Forcify Example
  * use with <script>
  *
  * Forcify is injected to the window(global) this way
@@ -27,6 +27,7 @@ qf.on('force', function(e){
     renderElement(e.force, element)
 });
 
+// Forcify support Muti-touch!
 var qf2 = new Forcify(document.querySelector("#forceMe2"));
 qf2.on('force', function(e){
     //console.log(e.force)

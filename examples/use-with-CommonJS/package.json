@@ -1,7 +1,7 @@
 {
-  "name": "forcify-demo",
+  "name": "forcify-example-commonjs",
   "version": "0.1.0",
-  "description": "forcify demo",
+  "description": "",
   "repository": {
     "type": "git",
     "url": ""
@@ -16,6 +16,6 @@
     "webpack-dev-server": "^1.10.1"
   },
   "dependencies": {
-
+    "forcify": "^0.1.0"
   }
 }

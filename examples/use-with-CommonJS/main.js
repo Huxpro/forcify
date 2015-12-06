@@ -1,5 +1,5 @@
 /**
- * Forcify Demo
+ * Forcify Example
  * use with CommonJS
  *
  * If you want to run CommonJS in browser, you need build tool
@@ -7,32 +7,54 @@
  */
 
 
-let Forcify = require('../build/forcify.js')
+//Require Forcify
+var Forcify = require('forcify')
 
 
-var element = document.getElementById('forceMe');
-var element2 = document.getElementById('forceMe2');
-var forceValueOutput = document.getElementById('forceValue');
-var background = document.getElementById('background');
-var touch = null;
+
+/**
+ * Cache Element
+ */
+var element             = document.getElementById('forceMe');
+var element2            = document.getElementById('forceMe2');
+var forceValueOutput    = document.getElementById('forceValue');
+var background          = document.getElementById('background');
 
 
-// Hux Forcer.js
 
+/**
+ * Create Forcify Instances
+ */
 var qf = new Forcify(document.querySelector("#forceMe"));
 qf.on('force', function(e){
     //console.log(e.force)
     renderElement(e.force, element)
 });
 
+// Forcify support Muti-touch!
 var qf2 = new Forcify(document.querySelector("#forceMe2"));
 qf2.on('force', function(e){
     //console.log(e.force)
     renderElement(e.force, element2)
 });
 
+
+
+/**
+ * Render!
+ */
 function renderElement(forceValue, _element) {
-    _element.style.webkitTransform = 'translateX(-50%) translateY(-50%) scale(' + (1 + forceValue * 1.5) + ')';
-    //background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
+    // animate element
+    _element.style.webkitTransform =
+        'translateX(-50%) translateY(-50%) scale(' +
+        (1 + forceValue * 1.5) +
+        ')';
+
+    // blur background, only in iOS/OSX for performance reasons.
+    if(Forcify.detection.TOUCH3D || Forcify.detection.OSXFORCE){
+        background.style.webkitFilter = 'blur(' + forceValue * 30 + 'px)';
+    }
+
+    // output force value
     forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
 }
