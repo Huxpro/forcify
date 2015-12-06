@@ -1,6 +1,6 @@
 {
   "name": "forcify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Hux <huxpro@gmail.com>",
   "description": "Forcify is a JavaScript library help you polyfill 3D/Force Touch in all devices.",
   "keywords": [
