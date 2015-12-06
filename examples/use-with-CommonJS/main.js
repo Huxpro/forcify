@@ -25,16 +25,14 @@ var background          = document.getElementById('background');
 /**
  * Create Forcify Instances
  */
-var qf = new Forcify(document.querySelector("#forceMe"));
+var qf = new Forcify(element);
 qf.on('force', function(e){
-    //console.log(e.force)
     renderElement(e.force, element)
 });
 
 // Forcify support Muti-touch!
-var qf2 = new Forcify(document.querySelector("#forceMe2"));
+var qf2 = new Forcify(element2);
 qf2.on('force', function(e){
-    //console.log(e.force)
     renderElement(e.force, element2)
 });
 

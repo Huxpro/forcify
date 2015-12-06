@@ -1,11 +1,22 @@
 /**
  * Forcify Example
- * use with <script>
+ * use with AMD
  *
- * Forcify is injected to the window(global) this way
- * so feel free to invole it directly
+ *
+ * This example use Require.js to load AMD Module.
  */
 
+
+// Require Path Config
+require.config({
+    paths: {
+        Forcify: "../../dist/forcify.min"
+    }
+})
+
+
+// AMD Wrapper
+define(['Forcify'], function(Forcify){
 
 
 /**
@@ -52,3 +63,7 @@ function renderElement(forceValue, _element) {
     // output force value
     forceValueOutput.innerHTML = 'Force: ' + forceValue.toFixed(4);
 }
+
+
+// Wrapper End.
+})
