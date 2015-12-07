@@ -14,10 +14,18 @@ export default class Press{
 
         // fallback to long press (mouse || touch)
         fn.handlePress = function(_instance, nativeEvent){
+
+            // if not fallback, early return everything.
+            if(!_instance.options.FALLBACK_TO_LONGPRESS) return;
+
+            /**
+             * Start do fallback!
+             */
             let delay       = _instance.options.LONG_PRESS_DELAY;
             let duration    = _instance.options.LONG_PRESS_DURATION;
             let type        = nativeEvent.type;
 
+            // Press Down
             if(type === "mousedown" || type === "touchstart"){
                 _instance._pressTimeStamp = Date.now();
                 _instance.timer = window.setTimeout(()=>{
@@ -26,6 +34,8 @@ export default class Press{
                     _instance.repeatPushForceValue(_instance, nativeEvent)
                 }, delay)
             }
+
+            // Press Up
             if(type === 'mouseup' || type === "touchend"){
                 window.clearTimeout(_instance.timer);
                 if(Date.now() - _instance._pressTimeStamp > delay){
@@ -43,20 +53,26 @@ export default class Press{
         }
 
         fn.repeatPushForceValue = function(_instance, nativeEvent){
-            // This pushing is never stop until
-            //      - touchend or mouseup trigger
-            //      - Force support is detected to true
-            if(Forcify.detection.FORCE) return;
+            // This pushing is repeating except:
+            //
+            //  - Force support is detected to true
+            if(Forcify.detection.TOUCH3D) return;
 
-            console.log('pushing...');
+            //  - touchend or mouseup trigger (_pressTimeStamp is reset)
+            if(_instance._pressTimeStamp == 0) return;
+
+
+            /**
+             * Start Pushing procedure
+             */
+            console.log('start pushing...');
+
             let delay = _instance.options.LONG_PRESS_DELAY;
             let duration = _instance.options.LONG_PRESS_DURATION;
 
-            // if _pressTimeStamp is reset. stop pushing!
-            if(_instance._pressTimeStamp == 0) return;
-
-            // calculate fake force value (the max value is 1)
+            // calculate fake force value
             let _ratio = ((Date.now() - _instance._pressTimeStamp) - delay)/duration;
+            // the max force value is 1
             let _force = (_ratio >= 1) ? 1 : _ratio;
 
             // invoke event handlers
@@ -65,6 +81,11 @@ export default class Press{
                 nativeEvent
             };
             _instance.invokeHandlers(_instance, _e)
+
+
+            /**
+             * repeat pushing...
+             */
             window.setTimeout(_instance.repeatPushForceValue.bind(null, _instance, nativeEvent, delay), 20)
         }
     }

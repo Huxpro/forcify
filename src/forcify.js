@@ -38,7 +38,7 @@ export default class Forcify{
         this.timer = null;              // unique press timer
         this._pressTimeStamp = 0;       // unique press-time stamp
 
-        // Instance Options.
+        // Merge Instance Options.
         let _temp = Object.extend({}, Forcify.defaults)
         this.options = Object.extend(_temp, options);
 
@@ -93,7 +93,7 @@ Forcify.emitEvent = function(_instance, nativeEvent){
     let force = 0;
     let type = nativeEvent.type;
 
-    console.log(type);
+    console.log('type: ' + type);
     console.log(nativeEvent);
     nativeEvent.preventDefault();           // !important
 
@@ -109,6 +109,18 @@ Forcify.emitEvent = function(_instance, nativeEvent){
     if(type == 'mousedown' || type == 'mouseup'){
         if(Forcify.detection.OSXFORCE) return;   // OSX should skip this
         _instance.handlePress(_instance, nativeEvent);
+    }
+}
+
+
+/**
+ * Forcify global coniguration
+ * @param  {object} _config
+ */
+Forcify.config = function(_config){
+    // Merge config.defaults into Forcify.defaults
+    if(_config.defaults){
+        Forcify.defaults = Object.extend(Forcify.defaults, _config.defaults)
     }
 }
 
@@ -132,6 +144,26 @@ Forcify.defaults = {
      * @default 1000(ms)
      */
     LONG_PRESS_DURATION: 100,
+
+    /**
+     * if Forcify fallback to long press on unsupport devices
+     * if set false, Forcify will not fallback 'force' to 'long press'
+     * @type {Boolean}
+     * @default true
+     */
+    FALLBACK_TO_LONGPRESS: true,
+
+    /**
+     * Some browser, such as Chrome, provide a very weird force value.
+     * if set false, Forcify would not try to find and ignore those weird
+     * behavior.
+     * Which means your "Force Actions" may
+     *   - be triggered just by a click in some 'force: 1' devices.
+     *   - be influenced in device like Nexus5 to give a force in (0,1)
+     * @type {Boolean}
+     * @default true
+     */
+    SHIM_WEIRD_BROWSER: true
 }
 
 
@@ -157,11 +189,12 @@ Forcify.detection = {
     /**
      * Chrome give any touchevent a 'force' property with value: 1.
      * Forcify has to hack it.
+     * Forcify not detect Chrome by UA but feature.
      *
      * @type {Boolean}
      * @default false
      */
-    CHROME: false,
+    WEIRD_CHROME: false,
 
     /**
      * Android performs really odd, which performs different in diff devices.
