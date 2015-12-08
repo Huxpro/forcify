@@ -13,7 +13,7 @@ let _uid = 0;
 // polyfill
 Object.extend = Object.assign ? Object.assign : (function(copy, src){
     for(let prop in src){
-        copy[prop] = source[prop];
+        copy[prop] = src[prop];
     }
     return copy;
 })
