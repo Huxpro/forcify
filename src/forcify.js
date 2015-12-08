@@ -187,9 +187,9 @@ Forcify.detection = {
     OSXFORCE: false,
 
     /**
-     * Chrome give any touchevent a 'force' property with value: 1.
+     * Chrome Mobile give any touchevent a 'force' property with value: 1.
      * Forcify has to hack it.
-     * Forcify not detect Chrome by UA but feature.
+     * Forcify not detect Chrome by UA but behaviors.
      *
      * @type {Boolean}
      * @default false
