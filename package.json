@@ -1,6 +1,6 @@
 {
   "name": "forcify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Hux <huxpro@gmail.com>",
   "description": "Forcify is a JavaScript library help you polyfill 3D/Force Touch in any device.",
   "keywords": [
@@ -12,9 +12,10 @@
   "main": "dist/forcify.min.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Huxpro/Forcify"
+    "url": "https://github.com/Huxpro/forcify"
   },
-  "bugs": "https://github.com/Huxpro/Forcify/issues",
+  "bugs": "https://github.com/Huxpro/forcify/issues",
+  "homepage": "http://huangxuan.me/forcify",
   "scripts": {
     "build": "webpack --config webpack.config.js --progress --colors"
   },

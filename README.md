@@ -7,17 +7,21 @@
 
 Forcify is a JavaScript library help you polyfill 3D/Force Touch in any device. All you need is just deal with the `e.force` value, dead simple:
 
-```
+```javascript
 var ele = document.querySelector('#force')
 
 new Forcify(ele).on('force', (e) => {
     doSomething(e.force)
 })
-
 ```
 
-Waaaaait! Can 3D/Force Touch, a hardware feature, be really polyfilled?  
-No, but we can emulate it with long press! Forcify can help you start supporting Force Touch feature to your app or site without hesitate. Check out demo in any unsupported device.
+Waaaaait! Can 3D/Force Touch, a hardware feature, be really polyfilled? No, but we can emulate it with Long Press!   
+**Forcify can help you start supporting Force Touch feature to your app or site without hesitate.**   
+
+[Check out demo in any unsupported device →](http://huangxuan.me/forcify)  
+
+[Download Forcify.min.js (2.4kb not gzipped)](http://huangxuan.me/forcify/dist/forcify.min.js)
+
 
 ## How Forcify Works?
 
@@ -25,7 +29,7 @@ No, but we can emulate it with long press! Forcify can help you start supporting
 2. If Forcify detect that ***Current Browser Behave Badly (not truly support but give a `!== 0` force value)***, Forcify would help you **shim these weird browser**, you would not get a wrong force value to mis-trigger your handlers.
 3. Finally, Forcify ***emulate a fake force event with LONG PRESS*** in any unsupported device as the **fallback**, to keep pushing events with a growing `force` value after long press triggered, which help your shortcut actions designed for Force Touch can be used in any other device.
 
-Also, Forcify provide many options such as `FALLBACK_TO_LONGPRESS`, `LONG_PRESS_DELAY`, `LONG_PRESS_DURATION` and `SHIM_WEIRD_BROWSER` to let you customize it as you need, more on [Document](#Document).
+Also, Forcify provide many options such as `FALLBACK_TO_LONGPRESS`, `LONG_PRESS_DELAY`, `LONG_PRESS_DURATION` and `SHIM_WEIRD_BROWSER` to let you customize it as you need, more on [Document](#document).
 
 
 ## Why Forcify?
@@ -99,7 +103,7 @@ $ele.on('force', (e) => {
 })
 ```
 
-You can pass `options` into the `Forcify` constructor to override default options:
+You can pass `options` into the `Forcify` constructor to override [default options](#forcifydefaults):
 
 ```javascript
 // only emit event in real supported device.
@@ -187,3 +191,12 @@ OSX support real webkit force touch
 Chrome Mobile give any touchevent a 'force' property with value: 1.   
 Forcify has to hack it.  
 Forcify not detect Weird Chrome by UA but behaviors.
+
+
+
+## Thanks
+
+Special thank to:
+
+- [This nice post about iOS9](http://www.mobilexweb.com/blog/ios9-safari-for-web-developers) inspired me to create Forcify.
+- [3D Touch Demo](https://github.com/freinbichler/3d-touch) by @freinbichler, which I used in my examples.
