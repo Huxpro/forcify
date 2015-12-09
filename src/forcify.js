@@ -81,13 +81,6 @@ export default class Forcify{
 }
 
 
-// import modules
-new (require('./touch'))(Forcify)
-new (require('./mouse'))(Forcify)
-new (require('./press'))(Forcify)
-new (require('./delegate'))(Forcify)
-
-
 // Static Members
 Forcify.emitEvent = function(_instance, nativeEvent){
     let force = 0;
@@ -127,6 +120,11 @@ Forcify.config = function(_config){
 
 // Cache elements reference
 Forcify.cache = {}
+
+
+// whether event bobble, globally
+// inner options for now.
+Forcify.__EVENT_BOBBLE__ = true;
 
 
 // Default Options
@@ -206,6 +204,12 @@ Forcify.detection = {
     ANDROID: navigator.userAgent.match(/(Android);?[\s\/]+([\d.]+)?/),
 }
 
+
+// import modules
+new (require('./touch'))(Forcify)
+new (require('./mouse'))(Forcify)
+new (require('./press'))(Forcify)
+new (require('./delegate'))(Forcify)
 
 // debugging use.
 // window.Forcify = Forcify;

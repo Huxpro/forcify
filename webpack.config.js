@@ -29,12 +29,12 @@ var config = {
         //node_modules: ["web_modules", "node_modules"]  (Default Settings)
     },
 
-    plugins: [
+    plugins: (process.env.MODE == 'dev')? [] : [
         //Minify the bundle
         new webpack.optimize.UglifyJsPlugin({
             compress: {
                 warnings: false,
-                drop_console: !(process.env.MODE == 'dev')
+                drop_console: true
             }
         }),
         //Allows error warnings but does not stop compiling. Will remove when eslint is added
