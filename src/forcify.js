@@ -124,7 +124,7 @@ Forcify.cache = {}
 
 // whether event bobble, globally
 // inner options for now.
-Forcify.__EVENT_BOBBLE__ = true;
+Forcify.__EVENT_BOBBLE__ = false;
 
 
 // Default Options
