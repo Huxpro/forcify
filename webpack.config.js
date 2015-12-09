@@ -7,6 +7,9 @@ var webpack         = require('webpack');
 var path            = require('path');
 var buildPath       = path.resolve(__dirname, 'dist');
 var nodeModulesPath = path.resolve(__dirname, 'node_modules');
+var outputFileName  = process.env.MODE == 'dev' ?
+                        "forcify.debug.js" :
+                        "forcify.min.js"
 
 var config = {
 
@@ -15,10 +18,10 @@ var config = {
     ],
 
     output: {
-        path: buildPath,         //Path of output file
-        filename: 'forcify.min.js',  //Name of output file
-        library: 'Forcify',      //Library Name
-        libraryTarget: 'umd'     //Target format
+        path: buildPath,            //Path of output file
+        filename: outputFileName,   //Name of output file
+        library: 'Forcify',         //Library Name
+        libraryTarget: 'umd'        //Target format
     },
 
     resolve: {
@@ -31,7 +34,7 @@ var config = {
         new webpack.optimize.UglifyJsPlugin({
             compress: {
                 warnings: false,
-                drop_console: true
+                drop_console: !(process.env.MODE == 'dev')
             }
         }),
         //Allows error warnings but does not stop compiling. Will remove when eslint is added
