@@ -41,7 +41,7 @@ Desktop:
 Browser | support |`force` | `webkitForce` | `events`
 ------- | ------- | ------ | ------------- | --------
 OSX Safari | Force Touch | null  | 0 ~ 1 by Force | webkitmouseforce
-OSX Safari | null        | null  | 1              | mouse
+OSX Safari | null        | null  | 0              | mouse
 Chrome     | null        | null  | null           | mouse
 Chrome Touchable-PC | null | 0   | null           | touch
 
