@@ -192,7 +192,9 @@ Chrome Mobile give any touchevent a 'force' property with value: 1.
 Forcify has to hack it.  
 Forcify not detect Weird Chrome by UA but behaviors.
 
+## Known Issues 
 
+- When user use a old Macbook without force touch but a Magic Trackpad 2 and switch between them.
 
 ## Thanks
 
