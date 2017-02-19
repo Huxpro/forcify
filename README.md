@@ -80,7 +80,7 @@ That is why Forcify comes to help.
 The simplest way to use Forcify is adding it to your HTML page with `<script>`:
 
 ```html
-<script src="/path/to/forcify.min.js"></script>
+<script src="https://unpkg.com/forcify/dist/forcify.min.js"></script>
 ```
 
 And you can also include Forcify in your JavaScript bundle with ES6, CommonJS or AMD syntax.
