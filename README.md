@@ -2,7 +2,7 @@
 
 > Use **Force Touch** in any device, today.
 
-## WARNING: This project is not active maintained.
+# WARNING: This project is not actively maintained.
 
 ## Intro
 
