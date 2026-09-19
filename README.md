@@ -19,9 +19,9 @@ new Forcify(ele).on('force', (e) => {
 Waaaaait! Can 3D/Force Touch, a hardware feature, be really polyfilled? No, but we can emulate it with Long Press!   
 **Forcify can help you start supporting Force Touch feature to your app or site without hesitate.**   
 
-[Check out demo in any unsupported device →](http://huangxuan.me/forcify)  
+[Check out demo in any unsupported device →](https://huxpro.github.io/forcify)
 
-[Download Forcify.min.js (2.4kb not gzipped)](http://huangxuan.me/forcify/dist/forcify.min.js)
+[Download Forcify.min.js (2.4kb not gzipped)](https://huxpro.github.io/forcify/dist/forcify.min.js)
 
 
 ## How Forcify Works?
