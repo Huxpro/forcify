@@ -148,12 +148,19 @@ Default options for Forcify instance.
 
 
 
-##### `LONG_PRESS_DURATION: 100`
+##### `LONG_PRESS_DURATION: 1000`
 
 * Type: `Number`
 * Default `1000(ms)`
 * Duration from MIN to MAX of the fake Force Touch
 
+
+
+##### `LONG_PRESS_TOLERANCE: 10`
+
+* Type: `Number`
+* Default `10(px)`
+* How far a pointer may move before a pending long press is cancelled, so scrolling never triggers fake force
 
 
 ##### `FALLBACK_TO_LONGPRESS: true`
@@ -170,6 +177,28 @@ Default options for Forcify instance.
 * Some browser, such as Chrome, provide a very weird force value.  if set false, Forcify would not try to find and ignore those weird behavior. Which means your "Force Actions" may
 	- be triggered just by a click in some 'force: 1' devices.
 	- be influenced in device like Nexus5 to give a force in (0,1)
+
+
+##### `DISABLE_NATIVE_GESTURES: true`
+
+* Type: `Boolean`
+* Default `true`
+* Turn off the platform's own long/hard-press behaviour on the element: the iOS callout and link preview, text selection, dragging, the Android long-press context menu and macOS force-click Look Up.
+
+
+### Instance
+
+##### `on(type, handler)` / `once(type, handler)` / `off([type], [handler])`
+
+Add and remove listeners. Handlers receive `{ type, force, source, pointerType, nativeEvent, target, instance, timeStamp }`, where `source` is `'touch3d'`, `'forcetouch'` or `'longpress'`.
+
+##### `destroy()`
+
+Remove every listener Forcify added and restore the element's styles.
+
+##### `force`
+
+The latest force value, from 0 to 1.
 
 
 ### Forcify.detection
@@ -193,9 +222,14 @@ Chrome Mobile give any touchevent a 'force' property with value: 1.
 Forcify has to hack it.  
 Forcify not detect Weird Chrome by UA but behaviors.
 
-## Known Issues 
+## Development
 
-- When user use a old Macbook without force touch but a Magic Trackpad 2 and switch between them.
+```bash
+npm install
+npm test          # unit tests (Vitest + happy-dom)
+npm run typecheck
+npm run build     # dist/forcify.{mjs,cjs,umd.js,min.js} + type declarations
+```
 
 ## Thanks
 

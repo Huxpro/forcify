@@ -1,31 +1,60 @@
 {
   "name": "forcify",
   "version": "0.2.4",
+  "description": "Pressure for every device: 3D Touch, Force Touch and long-press fallback behind one force event.",
   "author": "Hux <huxpro@gmail.com>",
-  "description": "Forcify is a JavaScript library help you polyfill 3D/Force Touch in any device.",
+  "license": "MIT",
   "keywords": [
-      "forcify",
-      "3d touch",
-      "force touch",
-      "force"
+    "forcify",
+    "3d touch",
+    "force touch",
+    "force",
+    "pressure",
+    "long press"
   ],
-  "main": "dist/forcify.min.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Huxpro/forcify"
+    "url": "git+https://github.com/Huxpro/forcify.git"
   },
   "bugs": "https://github.com/Huxpro/forcify/issues",
   "homepage": "https://huxpro.github.io/forcify",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/forcify.cjs",
+  "module": "./dist/forcify.mjs",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/forcify.min.js",
+  "jsdelivr": "./dist/forcify.min.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/forcify.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/forcify.cjs"
+      }
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "build"     : "webpack --config webpack.config.js --progress --colors",
-    "build-dev" : "MODE=dev webpack --config webpack.config.js --progress --colors"
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run check"
   },
   "devDependencies": {
-    "babel-core": "^5.8.21",
-    "babel-loader": "^5.3.2",
-    "webpack": "^1.12.2",
-    "webpack-dev-server": "^1.10.1"
-  },
-  "dependencies": {
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.14.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
   }
 }
