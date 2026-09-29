@@ -34,6 +34,20 @@ export interface ForcifyOptions {
   DISABLE_NATIVE_GESTURES: boolean
   /** Which pointers may press. Use `['pen']` for a stylus-only surface. */
   POINTER_TYPES: PointerKind[]
+  /** Force at which `peek` fires, once per press. */
+  PEEK_THRESHOLD: number
+  /** Force at which `pop` fires, once per press. A macOS force click always pops. */
+  POP_THRESHOLD: number
+  /** Play a haptic on peek and pop where the platform allows (Android, iOS 18+). */
+  HAPTICS: boolean
+  /** Swallow the click that follows a press that reached peek. */
+  PREVENT_CLICK: boolean
+  /** Shapes the emulated ramp: receives linear progress 0–1, returns force 0–1. */
+  LONG_PRESS_EASING: (progress: number) => number
+  /** CSS custom property set to the force on the element, or `false`. */
+  CSS_VARIABLE: string | false
+  /** Attribute set to `pressing`, `peek` or `pop` on the element during a press, or `false`. */
+  STATE_ATTRIBUTE: string | false
 }
 
 export type { Point }
@@ -50,11 +64,27 @@ export interface ForcifyEventBase {
   timeStamp: number
 }
 
+/** Types of the events that describe a press. */
+export type ForceEventType = 'force' | 'forcestart' | 'peek' | 'pop' | 'forceend'
+
 export interface ForceEvent extends ForcifyEventBase, Point {
-  type: 'force'
+  /**
+   * - `forcestart` — force rose above 0 for the first time in this press.
+   * - `force`      — force (or, for real pressure, pen position) changed.
+   * - `peek`       — force reached PEEK_THRESHOLD.
+   * - `pop`        — force reached POP_THRESHOLD, or a macOS force click.
+   * - `forceend`   — a press that had force ended.
+   */
+  type: ForceEventType
   /** Normalized force, from 0 (no force) to 1 (maximum). */
   force: number
   source: ForceSource
+  /** Highest force reached so far in this press. */
+  maxForce: number
+  /** Whether this press has reached `peek`. */
+  peeked: boolean
+  /** Whether this press has reached `pop`. */
+  popped: boolean
 }
 
 /**
@@ -70,6 +100,10 @@ export interface HoverEvent extends ForcifyEventBase, Point {
 
 export interface ForcifyEventMap {
   force: ForceEvent
+  forcestart: ForceEvent
+  peek: ForceEvent
+  pop: ForceEvent
+  forceend: ForceEvent
   hover: HoverEvent
 }
 
@@ -97,4 +131,8 @@ export interface ForcifyDetection {
   PEN_PRESSURE: boolean
   /** A pen hovering above the screen has been seen. Detected at runtime. */
   PEN_HOVER: boolean
+  /** iOS or iPadOS, including iPadOS asking for desktop sites. */
+  IOS: boolean
+  /** How {@link Forcify.haptic} plays haptics: `navigator.vibrate`, the iOS 18+ switch, or not at all. */
+  HAPTICS: 'vibrate' | 'switch' | false
 }

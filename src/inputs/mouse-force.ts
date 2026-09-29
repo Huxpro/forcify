@@ -41,6 +41,10 @@ export function bindMouseForce(f: Forcify): Teardown[] {
       detection.OSXFORCE = true
       f._sample('forcetouch', normalizeWebkitForce(e.webkitForce!), e, fromPointer(e))
     }),
+    // The trackpad clicked a second time: a force click.
+    listen<ForceMouseEvent>(el, 'webkitmouseforcedown', (e) => {
+      if (f._gesture?.source === 'forcetouch') f._pop(e)
+    }),
     listen<ForceMouseEvent>(el, 'webkitmouseforcechanged', (e) => {
       if (f._gesture?.source === 'forcetouch') {
         f._sample('forcetouch', normalizeWebkitForce(e.webkitForce || 0), e, fromPointer(e))
