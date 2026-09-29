@@ -17,4 +17,7 @@ export const detection: ForcifyDetection = {
   WEIRD_CHROME: false,
   ANDROID: /Android/i.test(ua),
   POINTER_EVENTS: hasWindow && typeof window.PointerEvent === 'function',
+  TOUCH_FORCE_EVENT: hasWindow && 'ontouchforcechange' in window,
+  PEN_PRESSURE: false,
+  PEN_HOVER: false,
 }

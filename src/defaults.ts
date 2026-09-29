@@ -7,4 +7,5 @@ export const defaults: ForcifyOptions = {
   FALLBACK_TO_LONGPRESS: true,
   SHIM_WEIRD_BROWSER: true,
   DISABLE_NATIVE_GESTURES: true,
+  POINTER_TYPES: ['mouse', 'touch', 'pen'],
 }

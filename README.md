@@ -186,11 +186,21 @@ Default options for Forcify instance.
 * Turn off the platform's own long/hard-press behaviour on the element: the iOS callout and link preview, text selection, dragging, the Android long-press context menu and macOS force-click Look Up.
 
 
+##### `POINTER_TYPES: ['mouse', 'touch', 'pen']`
+
+* Type: `Array`
+* Default `['mouse', 'touch', 'pen']`
+* Which pointers may press. `['pen']` makes a stylus-only surface.
+
+
 ### Instance
 
 ##### `on(type, handler)` / `once(type, handler)` / `off([type], [handler])`
 
-Add and remove listeners. Handlers receive `{ type, force, source, pointerType, nativeEvent, target, instance, timeStamp }`, where `source` is `'touch3d'`, `'forcetouch'` or `'longpress'`.
+Add and remove listeners.
+
+- `force` — `{ force, source, pointerType, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, nativeEvent, target, instance, timeStamp }`. `source` is `'touch3d'`, `'forcetouch'`, `'pen'` (Apple Pencil, Surface Pen, S Pen, Wacom…) or `'longpress'`.
+- `hover` — a pen hovering above the element (Apple Pencil hover on iPadOS 16.1+, desktop pen tablets): `{ hovering, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, … }`.
 
 ##### `destroy()`
 
@@ -221,6 +231,14 @@ OSX support real webkit force touch
 Chrome Mobile give any touchevent a 'force' property with value: 1.   
 Forcify has to hack it.  
 Forcify not detect Weird Chrome by UA but behaviors.
+
+##### `POINTER_EVENTS`, `TOUCH_FORCE_EVENT`
+
+Static feature detection: Pointer Events, and iOS 10+'s `touchforcechange`.
+
+##### `PEN_PRESSURE`, `PEN_HOVER`
+
+A pen with real pressure, or a hovering pen, has been seen.
 
 ## Development
 
