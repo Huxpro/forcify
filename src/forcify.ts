@@ -8,6 +8,7 @@
 
 import { defaults } from './defaults'
 import { detection } from './detection'
+import { haptic, type HapticStyle } from './haptics'
 import { bindMouseForce } from './inputs/mouse-force'
 import { bindNativeGestures } from './inputs/native-gestures'
 import { bindPen } from './inputs/pen'
@@ -16,6 +17,7 @@ import { bindTouchForce } from './inputs/touch-force'
 import type { Point } from './point'
 import type {
   ForceEvent,
+  ForceEventType,
   ForceSource,
   ForcifyDetection,
   ForcifyEventMap,
@@ -25,7 +27,7 @@ import type {
   HoverEvent,
   PointerKind,
 } from './types'
-import { clamp01, now, report, type Teardown } from './utils'
+import { clamp01, listen, now, report, type Teardown } from './utils'
 
 /** @internal State of the press currently held on an instance. */
 export interface Gesture {
@@ -47,6 +49,10 @@ export interface Gesture {
   event: Event
   /** Listeners that only live as long as the press. */
   teardown: Teardown[]
+  maxForce: number
+  started: boolean
+  peeked: boolean
+  popped: boolean
 }
 
 type Target = Element | string
@@ -80,6 +86,15 @@ export default class Forcify {
    * Accepts the options directly (`Forcify.config({ LONG_PRESS_DELAY: 300 })`)
    * or, as in Forcify 0.x, wrapped in `defaults`.
    */
+  /**
+   * Play a short haptic where the platform allows: `navigator.vibrate` on
+   * Android, a system switch haptic on iOS 18+. Best-effort.
+   * @returns whether a haptic mechanism was available.
+   */
+  static haptic(style?: HapticStyle): boolean {
+    return haptic(style)
+  }
+
   static config(config: Partial<ForcifyOptions> & { defaults?: Partial<ForcifyOptions> }): ForcifyOptions {
     const flat: Partial<ForcifyOptions> & { defaults?: unknown } = Object.assign({}, config)
     delete flat.defaults
@@ -150,7 +165,10 @@ export default class Forcify {
   /** Remove every listener Forcify added and restore the element. */
   destroy(): void {
     this._cancel()
+    this._gesture?.teardown.forEach((fn) => fn())
     this._gesture = null
+    this._state(false)
+    if (this.options.CSS_VARIABLE) this.element.style.removeProperty(this.options.CSS_VARIABLE)
     this._teardown.forEach((fn) => fn())
     this._teardown = []
     this._handlers = {}
@@ -175,6 +193,10 @@ export default class Forcify {
       frame: 0,
       event,
       teardown: [],
+      maxForce: 0,
+      started: false,
+      peeked: false,
+      popped: false,
     })
     if (this._canFallback(pointerType)) {
       gesture.timer = setTimeout(() => this._longPress(), this.options.LONG_PRESS_DELAY)
@@ -211,6 +233,15 @@ export default class Forcify {
     this._emit(g, force)
   }
 
+  /** @internal A native force click (macOS) — pop right away. */
+  _pop(nativeEvent: Event): void {
+    const g = this._gesture
+    if (!g || g.popped) return
+    g.event = nativeEvent
+    this._threshold(g, 'peek')
+    this._threshold(g, 'pop')
+  }
+
   /** @internal The press ended. Resets force to 0. */
   _end(nativeEvent: Event): void {
     const g = this._gesture
@@ -220,6 +251,10 @@ export default class Forcify {
     g.event = nativeEvent
     this._gesture = null
     if (this.force !== 0) this._emit(g, 0)
+    if (!g.started) return
+    this._state(false)
+    this._dispatch('forceend', this._event('forceend', g))
+    if (g.peeked && this.options.PREVENT_CLICK) this._swallowClick()
   }
 
   /** @internal Whether this kind of pointer may press, per POINTER_TYPES. */
@@ -242,12 +277,12 @@ export default class Forcify {
     g.timer = undefined
     if (g.source) return
     g.source = 'longpress'
-    const { LONG_PRESS_DELAY: delay, LONG_PRESS_DURATION: duration } = this.options
+    const { LONG_PRESS_DELAY: delay, LONG_PRESS_DURATION: duration, LONG_PRESS_EASING: ease } = this.options
     const start = g.startTime + delay
     const tick = (): void => {
       if (this._gesture !== g || g.source !== 'longpress') return
-      const progress = duration > 0 ? (now() - start) / duration : 1
-      this._emit(g, progress)
+      const progress = duration > 0 ? clamp01((now() - start) / duration) : 1
+      this._emit(g, ease(progress))
       if (progress < 1) g.frame = requestAnimationFrame(tick)
     }
     tick()
@@ -285,17 +320,72 @@ export default class Forcify {
     if (force === this.force && (key === this._lastKey || force === 0)) return
     this.force = force
     this._lastKey = key
-    this._dispatch('force', {
-      type: 'force',
-      force,
+    if (force > g.maxForce) g.maxForce = force
+
+    const variable = this.options.CSS_VARIABLE
+    if (variable) this.element.style.setProperty(variable, String(force))
+
+    if (!g.started && force > 0) {
+      g.started = true
+      this._state('pressing')
+      this._dispatch('forcestart', this._event('forcestart', g))
+    }
+    this._dispatch('force', this._event('force', g))
+    if (force >= this.options.PEEK_THRESHOLD) this._threshold(g, 'peek')
+    if (force >= this.options.POP_THRESHOLD) this._threshold(g, 'pop')
+  }
+
+  private _threshold(g: Gesture, type: 'peek' | 'pop'): void {
+    if (type === 'peek' ? g.peeked : g.popped) return
+    if (type === 'peek') g.peeked = true
+    else g.popped = true
+    if (!g.started) {
+      g.started = true
+      this._dispatch('forcestart', this._event('forcestart', g))
+    }
+    this._state(type)
+    if (this.options.HAPTICS) haptic(type === 'peek' ? 'light' : 'medium')
+    this._dispatch(type, this._event(type, g))
+  }
+
+  private _event(type: ForceEventType, g: Gesture): ForceEvent {
+    return {
+      type,
+      force: this.force,
       source: g.source || 'longpress',
       pointerType: g.pointerType,
-      ...p,
+      ...g.point,
+      maxForce: g.maxForce,
+      peeked: g.peeked,
+      popped: g.popped,
       nativeEvent: g.event,
       target: this.element,
       instance: this,
       timeStamp: now(),
-    } satisfies ForceEvent)
+    }
+  }
+
+  private _state(state: 'pressing' | 'peek' | 'pop' | false): void {
+    const attr = this.options.STATE_ATTRIBUTE
+    if (!attr) return
+    if (state) this.element.setAttribute(attr, state)
+    else this.element.removeAttribute(attr)
+  }
+
+  /** A press that peeked should not also activate the element on release. */
+  private _swallowClick(): void {
+    const off = listen<MouseEvent>(this.element, 'click', (e) => {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      done()
+    }, { capture: true })
+    const timer = setTimeout(() => done(), 600)
+    const done = () => {
+      off()
+      clearTimeout(timer)
+      this._teardown = this._teardown.filter((fn) => fn !== done)
+    }
+    this._teardown.push(done)
   }
 
   private _dispatch<K extends ForcifyEventName>(type: K, event: ForcifyEventMap[K]): void {

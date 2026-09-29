@@ -193,6 +193,27 @@ Default options for Forcify instance.
 * Which pointers may press. `['pen']` makes a stylus-only surface.
 
 
+##### `PEEK_THRESHOLD: 0.3` / `POP_THRESHOLD: 0.6`
+
+Force at which `peek` and `pop` fire, once per press. A macOS force click always pops.
+
+##### `HAPTICS: true`
+
+Play a haptic on peek and pop where the platform allows: `navigator.vibrate` on Android, a system switch haptic on iOS 18+. Best-effort.
+
+##### `PREVENT_CLICK: true`
+
+Swallow the click that follows a press that reached peek.
+
+##### `LONG_PRESS_EASING: t => t`
+
+Shapes the emulated ramp.
+
+##### `CSS_VARIABLE: '--force'` / `STATE_ATTRIBUTE: 'data-force-state'`
+
+Mirror the force into a CSS custom property, and the press state (`pressing`, `peek`, `pop`) into an attribute, so styles can react without JavaScript. `false` turns either off.
+
+
 ### Instance
 
 ##### `on(type, handler)` / `once(type, handler)` / `off([type], [handler])`
@@ -200,6 +221,7 @@ Default options for Forcify instance.
 Add and remove listeners.
 
 - `force` — `{ force, source, pointerType, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, nativeEvent, target, instance, timeStamp }`. `source` is `'touch3d'`, `'forcetouch'`, `'pen'` (Apple Pencil, Surface Pen, S Pen, Wacom…) or `'longpress'`.
+- `forcestart`, `peek`, `pop`, `forceend` — the life of a press, each carrying `maxForce`, `peeked` and `popped`.
 - `hover` — a pen hovering above the element (Apple Pencil hover on iPadOS 16.1+, desktop pen tablets): `{ hovering, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, … }`.
 
 ##### `destroy()`
@@ -209,6 +231,11 @@ Remove every listener Forcify added and restore the element's styles.
 ##### `force`
 
 The latest force value, from 0 to 1.
+
+
+### Forcify.haptic([style])
+
+Play a `'light'`, `'medium'` or `'heavy'` haptic where possible. Returns whether a mechanism was available.
 
 
 ### Forcify.detection
@@ -239,6 +266,10 @@ Static feature detection: Pointer Events, and iOS 10+'s `touchforcechange`.
 ##### `PEN_PRESSURE`, `PEN_HOVER`
 
 A pen with real pressure, or a hovering pen, has been seen.
+
+##### `IOS`, `HAPTICS`
+
+iOS/iPadOS (including iPadOS asking for desktop sites), and the haptic mechanism: `'vibrate'`, `'switch'` or `false`.
 
 ## Development
 
