@@ -1,6 +1,6 @@
 {
   "name": "forcify",
-  "version": "0.2.4",
+  "version": "1.0.0",
   "description": "Pressure for every device: 3D Touch, Force Touch and long-press fallback behind one force event.",
   "author": "Hux <huxpro@gmail.com>",
   "license": "MIT",
@@ -41,15 +41,18 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "CHANGELOG.md",
+    "MIGRATION.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm test && npm run build",
-    "prepublishOnly": "npm run check"
+    "check": "npm run typecheck && npm test && npm run build && npm run verify-dist",
+    "prepublishOnly": "npm run check",
+    "verify-dist": "node scripts/verify-dist.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forcify · script tag</title>
+<link rel="stylesheet" href="style.css">
+<main>
+  <h1>Press the ball</h1>
+  <div class="ball" id="ball"></div>
+  <output id="out">force 0.000</output>
+</main>
+<script src="../dist/forcify.min.js"></script>
+<script>
+  new Forcify('#ball').on('force', function (e) {
+    document.getElementById('out').textContent = 'force ' + e.force.toFixed(3) + ' · ' + e.source
+  })
+</script>
