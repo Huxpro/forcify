@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Forcify</title>
+  <meta name="description" content="Pressure on every device: 3D Touch, Force Touch, Apple Pencil and pens, with a long-press fallback, Peek & Pop, haptics and CSS hooks.">
+  <meta name="theme-color" content="#3d7bfa">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%233d7bfa'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div>
+    <h1>Forcify</h1>
+    <p class="tagline">Use force on any device, today.</p>
+    <div class="orb" role="button" aria-label="Press and hold"></div>
+    <div class="readout" aria-live="polite">force 0.000<small>press and hold the ball</small></div>
+    <div class="cta">
+      <a class="button primary" href="#getting-started">Get started</a>
+      <a class="button" href="https://github.com/Huxpro/forcify">GitHub</a>
+    </div>
+    <code class="install">npm install forcify</code>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <strong>Guide</strong>
+    <a href="#getting-started">Getting started</a>
+    <a href="#device">Your device</a>
+    <a href="#sources">How it works</a>
+    <strong>Events</strong>
+    <a href="#demo-force"><code>force</code></a>
+    <a href="#demo-event">Event object</a>
+    <a href="#demo-lifecycle"><code>forcestart</code> · <code>forceend</code></a>
+    <a href="#demo-peek-pop"><code>peek</code> · <code>pop</code></a>
+    <a href="#demo-hover"><code>hover</code></a>
+    <strong>Instance</strong>
+    <a href="#demo-selector"><code>new Forcify()</code></a>
+    <a href="#demo-once"><code>once()</code></a>
+    <a href="#demo-off"><code>off()</code></a>
+    <a href="#demo-destroy"><code>destroy()</code></a>
+    <a href="#demo-instance-force"><code>.force</code></a>
+    <strong>Options</strong>
+    <a href="#demo-delay"><code>LONG_PRESS_DELAY</code></a>
+    <a href="#demo-duration"><code>LONG_PRESS_DURATION</code></a>
+    <a href="#demo-tolerance"><code>LONG_PRESS_TOLERANCE</code></a>
+    <a href="#demo-easing"><code>LONG_PRESS_EASING</code></a>
+    <a href="#demo-fallback"><code>FALLBACK_TO_LONGPRESS</code></a>
+    <a href="#demo-shim"><code>SHIM_WEIRD_BROWSER</code></a>
+    <a href="#demo-pointer-types"><code>POINTER_TYPES</code></a>
+    <a href="#demo-thresholds"><code>PEEK/POP_THRESHOLD</code></a>
+    <a href="#demo-haptics-option"><code>HAPTICS</code></a>
+    <a href="#demo-prevent-click"><code>PREVENT_CLICK</code></a>
+    <a href="#demo-native"><code>DISABLE_NATIVE_GESTURES</code></a>
+    <a href="#demo-css-variable"><code>CSS_VARIABLE</code></a>
+    <a href="#demo-state-attribute"><code>STATE_ATTRIBUTE</code></a>
+    <strong>Static</strong>
+    <a href="#demo-config"><code>Forcify.config()</code></a>
+    <a href="#demo-defaults"><code>Forcify.defaults</code></a>
+    <a href="#demo-detection"><code>Forcify.detection</code></a>
+    <a href="#demo-haptic"><code>Forcify.haptic()</code></a>
+    <a href="#demo-version"><code>Forcify.version</code></a>
+    <strong>Recipes</strong>
+    <a href="#demo-drawing">Pressure drawing</a>
+    <a href="#demo-scrub">Press to fast-forward</a>
+    <a href="#demo-reveal">Press to reveal</a>
+    <strong>Reference</strong>
+    <a href="#install">Install &amp; module formats</a>
+    <a href="#compatibility">Compatibility</a>
+    <a href="#ios">Across iOS generations</a>
+  </nav>
+
+  <main>
+
+<!-- ================================================================= GUIDE -->
+
+<h2 id="getting-started">Getting started</h2>
+<p>Forcify gives you a single <code>force</code> value from 0 to 1 on any hardware. On 3D Touch iPhones, Force Touch trackpads and pressure pens it is real pressure. Everywhere else, a long press emulates it.</p>
+
+<section class="demo" id="demo-force">
+  <header><h3><a href="#demo-force">on('force', handler)</a></h3></header>
+  <p class="desc">Create an instance on an element and listen to <code>force</code>. That is the whole API most apps need.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="meter"><i></i></div>
+        <output>0.000</output>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const meter = $('.meter i')
+
+    new Forcify($('.pad')).on('force', (e) => {
+      meter.style.width = e.force * 100 + '%'
+      $('output').value = e.force.toFixed(3)
+    })
+  </script>
+</section>
+
+<h2 id="device">Your device</h2>
+<p>Forcify doesn't know what hardware you have until it sees a real sample, so several flags flip only once you press something. This table is <code>Forcify.detection</code> for your browser, updated live.</p>
+<div class="table-wrap" id="detection-table">
+  <table>
+    <thead><tr><th>Flag</th><th>Value</th><th>Meaning</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2 id="sources">How it works</h2>
+<p>Each press is served by the best source available. Every event reports which source it came from.</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th><code>source</code></th><th>Hardware</th><th>Read from</th></tr></thead>
+    <tbody>
+      <tr><td><code>'touch3d'</code></td><td>iPhone 6s – XS 3D Touch</td><td><code>Touch.force</code>, <code>touchforcechange</code></td></tr>
+      <tr><td><code>'forcetouch'</code></td><td>Mac Force Touch trackpads</td><td><code>MouseEvent.webkitForce</code>, <code>webkitmouseforce*</code></td></tr>
+      <tr><td><code>'pen'</code></td><td>Apple Pencil, Surface Pen, S Pen, Wacom…</td><td><code>PointerEvent.pressure</code>, tilt, twist, altitude/azimuth</td></tr>
+      <tr><td><code>'longpress'</code></td><td>Everything else</td><td>Emulated: after <code>LONG_PRESS_DELAY</code>, ramps 0 → 1 over <code>LONG_PRESS_DURATION</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ================================================================ EVENTS -->
+
+<h2 id="events">Events</h2>
+<p>A press emits <code>forcestart</code>, then <code>force</code> for every change, with <code>peek</code> and <code>pop</code> as it crosses the thresholds, and finally <code>forceend</code>. A pen hovering above the element emits <code>hover</code>.</p>
+
+<section class="demo" id="demo-event">
+  <header><h3><a href="#demo-event">Event object</a></h3></header>
+  <p class="desc">Every force event carries the value, where it came from, where the pointer is, how a pen is held, and how the press has gone so far. Try it with a pen to see the tilt fields change.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press here (try a pen!)</div>
+        <pre class="log" style="max-height:none">{}</pre>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const round = (n) => Math.round(n * 1000) / 1000
+
+    new Forcify($('.pad')).on('force', (e) => {
+      $('pre').textContent = JSON.stringify({
+        type: e.type,
+        force: round(e.force),
+        source: e.source,            // 'touch3d' | 'forcetouch' | 'pen' | 'longpress'
+        pointerType: e.pointerType,  // 'touch' | 'mouse' | 'pen'
+        x: round(e.x), y: round(e.y),
+        tiltX: round(e.tiltX), tiltY: round(e.tiltY), twist: e.twist,
+        altitudeAngle: round(e.altitudeAngle),
+        azimuthAngle: round(e.azimuthAngle),
+        maxForce: round(e.maxForce), peeked: e.peeked, popped: e.popped,
+        nativeEvent: e.nativeEvent.type,
+        timeStamp: Math.round(e.timeStamp),
+      }, null, 2)
+    })
+  </script>
+</section>
+
+<section class="demo" id="demo-lifecycle">
+  <header><h3><a href="#demo-lifecycle">forcestart · peek · pop · forceend</a></h3></header>
+  <p class="desc">The life of a press. Each event fires at most once per press. A quick tap fires none of them.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><div class="pad">Press &amp; hold, then release</div></div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const f = new Forcify($('.pad'))
+
+    for (const type of ['forcestart', 'peek', 'pop', 'forceend']) {
+      f.on(type, (e) => {
+        log(`${type.padEnd(10)} force=${e.force.toFixed(2)} max=${e.maxForce.toFixed(2)} (${e.source})`)
+      })
+    }
+  </script>
+</section>
+
+<section class="demo" id="demo-peek-pop">
+  <header><h3><a href="#demo-peek-pop">peek · pop</a></h3></header>
+  <p class="desc">Peek &amp; Pop the way 3D Touch did it, on any device. Pressing previews the message, pressing harder opens it, and letting go after a peek closes the preview. The click after a peek is swallowed, so releasing doesn't also open the link.</p>
+  <style>
+    .mail { display: block; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); color: var(--text); text-decoration: none; touch-action: none; }
+    .mail b { display: block; }
+    .mail span { color: var(--muted); font-size: .9rem; }
+    .preview { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity .15s;
+      backdrop-filter: blur(calc(var(--p, 0) * 12px)); -webkit-backdrop-filter: blur(calc(var(--p, 0) * 12px)); background: rgb(0 0 0 / calc(var(--p, 0) * 30%)); }
+    .preview.open { opacity: 1; }
+    .preview.popped { pointer-events: auto; background: rgb(0 0 0 / 45%); }
+    .preview article { width: min(420px, 100%); background: var(--surface); color: var(--text); border-radius: 18px; padding: 20px; box-shadow: 0 20px 60px #0005;
+      scale: calc(0.85 + var(--p, 0) * 0.15); transition: scale .2s; }
+    .preview.popped article { scale: 1; }
+    .preview button { margin-top: 12px; }
+  </style>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <a class="mail" href="#demo-peek-pop"><b>Hux</b><span>Forcify 1.0 is out — press to peek…</span></a>
+        <div class="preview">
+          <article>
+            <b>Forcify 1.0 is out</b>
+            <p>Pens, Pencil hover, Peek &amp; Pop, haptics and CSS hooks, with the same <code>force</code> event as 2015.</p>
+            <button type="button" class="close">Close</button>
+          </article>
+        </div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const preview = $('.preview')
+
+    new Forcify($('.mail'))
+      .on('force', (e) => preview.style.setProperty('--p', e.force))
+      .on('peek', () => { preview.classList.add('open'); log('peek') })
+      .on('pop', () => { preview.classList.add('popped'); log('pop') })
+      .on('forceend', (e) => { if (!e.popped) preview.classList.remove('open') })
+
+    $('.close').onclick = () => preview.classList.remove('open', 'popped')
+    $('.mail').onclick = () => log('click (a tap, not a press)')
+  </script>
+</section>
+
+<section class="demo" id="demo-hover">
+  <header><h3><a href="#demo-hover">hover</a></h3></header>
+  <p class="desc">Hover a pen above the element: Apple Pencil hover on supported iPads (iPadOS 16.1+) or a desktop pen tablet. The ring follows the tip and grows as the pen tilts. When the pen leaves, the event fires with <code>hovering: false</code>.</p>
+  <style>
+    .hover-pad { min-height: 200px; }
+    .hover-dot { position: absolute; left: 0; top: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; }
+  </style>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad hover-pad">Hover a pen here<div class="hover-dot" hidden></div></div>
+        <p class="note">No pen that hovers? Nothing will happen. This event is only emitted for pens.</p>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const dot = $('.hover-dot')
+    let hovering = false
+
+    new Forcify($('.pad')).on('hover', (e) => {
+      const box = e.target.getBoundingClientRect()
+      dot.hidden = !e.hovering
+      dot.style.translate = `${e.x - box.left}px ${e.y - box.top}px`
+      dot.style.scale = 1 + (Math.PI / 2 - e.altitudeAngle) * 1.5
+      if (e.hovering !== hovering) log(`hovering: ${(hovering = e.hovering)}`)
+    })
+  </script>
+</section>
+
+<!-- ============================================================== INSTANCE -->
+
+<h2 id="instance">Instance</h2>
+<p>An instance owns one element. Every method except <code>destroy()</code> returns the instance, so calls chain.</p>
+
+<section class="demo" id="demo-selector">
+  <header><h3><a href="#demo-selector">new Forcify(elementOrSelector, options?)</a></h3></header>
+  <p class="desc">The constructor takes an element or a CSS selector. Options override <code>Forcify.defaults</code> for this instance only. <code>e.target</code> is always the instance's element.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad" id="selector-pad">#selector-pad</div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#selector-pad', { LONG_PRESS_DURATION: 600 })
+      .on('force', (e) => (e.target.textContent = e.force.toFixed(2)))
+      .on('forceend', (e) => (e.target.textContent = '#selector-pad'))
+  </script>
+</section>
+
+<section class="demo" id="demo-once">
+  <header><h3><a href="#demo-once">once(type, handler)</a></h3></header>
+  <p class="desc">Listens a single time, then removes itself. Pop twice and only the first one is logged. Reset to try again.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><div class="pad">Pop me twice</div></div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify($('.pad'))
+      .once('pop', () => log('once: first pop — this listener is gone now'))
+      .on('pop', () => log('on: pop'))
+  </script>
+</section>
+
+<section class="demo" id="demo-off">
+  <header><h3><a href="#demo-off">off(type?, handler?)</a></h3></header>
+  <p class="desc">Removes one handler, every handler of a type, or every handler. Untick the box and the output stops updating, even though the pad still fills through CSS.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="row"><label><input type="checkbox" checked> listening</label> <output>0.00</output></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const f = new Forcify($('.pad'))
+    const show = (e) => ($('output').value = e.force.toFixed(2))
+    f.on('force', show)
+
+    $('input').onchange = (e) => {
+      if (e.target.checked) f.on('force', show)
+      else f.off('force', show)
+    }
+  </script>
+</section>
+
+<section class="demo" id="demo-destroy">
+  <header><h3><a href="#demo-destroy">destroy()</a></h3></header>
+  <p class="desc">Removes every listener Forcify added and restores the element's styles and attributes. Call it before removing the element in a single-page app.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="row"><button type="button">destroy()</button> <output>alive</output></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const create = () => new Forcify($('.pad'))
+    let f = create()
+
+    $('button').onclick = () => {
+      if (f) { f.destroy(); f = null } else { f = create() }
+      $('button').textContent = f ? 'destroy()' : 'new Forcify()'
+      $('output').value = f ? 'alive' : 'destroyed — pressing does nothing'
+    }
+  </script>
+</section>
+
+<section class="demo" id="demo-instance-force">
+  <header><h3><a href="#demo-instance-force">instance.force</a></h3></header>
+  <p class="desc">The latest force value, which you can read at any time. Here a normal <code>pointermove</code> listener reads it to set the width of a trail.</p>
+  <style>.trail { height: 180px; position: relative; } .trail i { position: absolute; border-radius: 50%; background: var(--accent); pointer-events: none; translate: -50% -50%; }</style>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><div class="pad trail">Press, hold and move</div></div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const pad = $('.pad')
+    const f = new Forcify(pad, { PREVENT_CLICK: false })
+
+    pad.addEventListener('pointermove', (e) => {
+      if (f.force === 0) return
+      const box = pad.getBoundingClientRect()
+      const dot = document.createElement('i')
+      const size = 4 + f.force * 24 + 'px'
+      Object.assign(dot.style, { left: e.clientX - box.left + 'px', top: e.clientY - box.top + 'px', width: size, height: size })
+      pad.append(dot)
+    })
+  </script>
+</section>
+
+<!-- =============================================================== OPTIONS -->
+
+<h2 id="options">Options</h2>
+<p>Pass options to the constructor, or change defaults for every new instance with <code>Forcify.config()</code>. Each demo below builds a new instance whenever you change a control.</p>
+
+<section class="demo" id="demo-delay">
+  <header><h3><a href="#demo-delay">LONG_PRESS_DELAY: 200</a></h3></header>
+  <p class="desc">How long, in milliseconds, a press must be held before the emulated force begins. Anything shorter is a tap.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="row"><input type="range" min="0" max="1000" step="50" value="200"> <output>200ms</output></div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    let f, down
+    $('.pad').addEventListener('pointerdown', () => (down = performance.now()))
+
+    const make = (delay) => {
+      f?.destroy()
+      f = new Forcify($('.pad'), { LONG_PRESS_DELAY: delay })
+        .on('forcestart', () => log(`force started ${Math.round(performance.now() - down)}ms after pointerdown`))
+      $('output').value = delay + 'ms'
+    }
+    $('input').oninput = (e) => make(Number(e.target.value))
+    make(200)
+  </script>
+</section>
+
+<section class="demo" id="demo-duration">
+  <header><h3><a href="#demo-duration">LONG_PRESS_DURATION: 1000</a></h3></header>
+  <p class="desc">How long, in milliseconds, the emulated force takes to ramp from 0 to 1.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="row"><input type="range" min="0" max="3000" step="100" value="1000"> <output>1000ms</output></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    let f
+    const make = (duration) => {
+      f?.destroy()
+      f = new Forcify($('.pad'), { LONG_PRESS_DURATION: duration })
+      $('output').value = duration + 'ms'
+    }
+    $('input').oninput = (e) => make(Number(e.target.value))
+    make(1000)
+  </script>
+</section>
+
+<section class="demo" id="demo-tolerance">
+  <header><h3><a href="#demo-tolerance">LONG_PRESS_TOLERANCE: 10</a></h3></header>
+  <p class="desc">How many pixels the pointer may move before a pending long press is cancelled, so scrolling and swiping never trigger fake force. Press and drag straight away: past the tolerance, nothing happens.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press, then drag</div>
+        <div class="row"><input type="range" min="0" max="100" step="5" value="10"> <output>10px</output></div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    let f
+    const make = (tolerance) => {
+      f?.destroy()
+      f = new Forcify($('.pad'), { LONG_PRESS_TOLERANCE: tolerance, LONG_PRESS_DELAY: 400 })
+        .on('forcestart', () => log('long press started'))
+      $('output').value = tolerance + 'px'
+    }
+    $('input').oninput = (e) => make(Number(e.target.value))
+    make(10)
+  </script>
+</section>
+
+<section class="demo" id="demo-easing">
+  <header><h3><a href="#demo-easing">LONG_PRESS_EASING: t =&gt; t</a></h3></header>
+  <p class="desc">Shapes the emulated ramp. The function receives linear progress from 0 to 1 and returns a force.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <canvas width="300" height="110" style="width:100%;max-width:300px;height:auto"></canvas>
+        <div class="pad" style="min-height:100px">Press &amp; hold</div>
+        <select>
+          <option value="linear">linear — t</option>
+          <option value="easeOut">ease-out — 1 − (1 − t)³</option>
+          <option value="easeIn">ease-in — t³</option>
+          <option value="steps">steps(4)</option>
+          <option value="spring">spring</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const easings = {
+      linear: (t) => t,
+      easeOut: (t) => 1 - (1 - t) ** 3,
+      easeIn: (t) => t ** 3,
+      steps: (t) => Math.ceil(t * 4) / 4,
+      spring: (t) => Math.min(1, 1 - Math.cos(t * 4.5 * Math.PI) * Math.exp(-6 * t)),
+    }
+    const plot = (ease, now = -1) => {
+      const c = $('canvas').getContext('2d')
+      c.clearRect(0, 0, 300, 110)
+      c.strokeStyle = getComputedStyle(demo).getPropertyValue('--accent')
+      c.lineWidth = 2
+      c.beginPath()
+      for (let x = 0; x <= 300; x++) c.lineTo(x, 100 - ease(x / 300) * 90)
+      c.stroke()
+      if (now >= 0) c.fillRect(0, 100 - now * 90, 300, 1)
+    }
+    let f
+    const make = (name) => {
+      f?.destroy()
+      f = new Forcify($('.pad'), { LONG_PRESS_EASING: easings[name] })
+        .on('force', (e) => plot(easings[name], e.force))
+      plot(easings[name])
+    }
+    $('select').onchange = (e) => make(e.target.value)
+    make('linear')
+  </script>
+</section>
+
+<section class="demo" id="demo-fallback">
+  <header><h3><a href="#demo-fallback">FALLBACK_TO_LONGPRESS: true</a></h3></header>
+  <p class="desc">Emulate force with a long press on devices with no pressure hardware. Turn it off to react only to real pressure: on a phone or laptop without it, the right pad stays empty.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <div class="pad" id="fallback-on">true</div>
+          <div class="pad" id="fallback-off">false</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#fallback-on', { FALLBACK_TO_LONGPRESS: true })
+    new Forcify('#fallback-off', { FALLBACK_TO_LONGPRESS: false })
+  </script>
+</section>
+
+<section class="demo" id="demo-shim">
+  <header><h3><a href="#demo-shim">SHIM_WEIRD_BROWSER: true</a></h3></header>
+  <p class="desc">Many Android devices report finger <em>area</em> as <code>Touch.force</code>, and old Chrome reported a constant 1. Forcify ignores those values by default. On Android, press both pads: the right one reacts to how much of your finger touches the screen.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <div class="pad" id="shim-on">true</div>
+          <div class="pad" id="shim-off">false</div>
+        </div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#shim-on', { SHIM_WEIRD_BROWSER: true })
+      .on('forcestart', (e) => log(`true  → ${e.source}`))
+    new Forcify('#shim-off', { SHIM_WEIRD_BROWSER: false })
+      .on('forcestart', (e) => log(`false → ${e.source}`))
+  </script>
+</section>
+
+<section class="demo" id="demo-pointer-types">
+  <header><h3><a href="#demo-pointer-types">POINTER_TYPES: ['mouse', 'touch', 'pen']</a></h3></header>
+  <p class="desc">Which pointers may press. For example, <code>['pen']</code> makes a surface that only a stylus can press, so a resting palm is ignored.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press with an allowed pointer</div>
+        <div class="row">
+          <label><input type="checkbox" value="mouse" checked> mouse</label>
+          <label><input type="checkbox" value="touch" checked> touch</label>
+          <label><input type="checkbox" value="pen" checked> pen</label>
+        </div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    let f
+    const make = () => {
+      const types = [...$$('input:checked')].map((input) => input.value)
+      f?.destroy()
+      f = new Forcify($('.pad'), { POINTER_TYPES: types })
+        .on('forcestart', (e) => log(`pressed with ${e.pointerType}`))
+    }
+    $$('input').forEach((input) => (input.onchange = make))
+    make()
+  </script>
+</section>
+
+<section class="demo" id="demo-thresholds">
+  <header><h3><a href="#demo-thresholds">PEEK_THRESHOLD: 0.3 · POP_THRESHOLD: 0.6</a></h3></header>
+  <p class="desc">The force at which <code>peek</code> and <code>pop</code> fire. A macOS force click always pops. With the default long-press ramp, peek lands at 500 ms, matching iOS Haptic Touch.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press &amp; hold</div>
+        <div class="meter" style="margin-top:14px"><i></i><b data-label="peek"></b><b data-label="pop"></b></div>
+        <div class="row"><span>peek</span><input type="range" min="0.05" max="1" step="0.05" value="0.3" name="peek"></div>
+        <div class="row"><span>pop&nbsp;</span><input type="range" min="0.05" max="1" step="0.05" value="0.6" name="pop"></div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    let f
+    const make = () => {
+      const peek = Number($('[name=peek]').value)
+      const pop = Number($('[name=pop]').value)
+      const [peekMark, popMark] = $$('.meter b')
+      peekMark.style.left = peek * 100 + '%'
+      popMark.style.left = pop * 100 + '%'
+      f?.destroy()
+      f = new Forcify($('.pad'), { PEEK_THRESHOLD: peek, POP_THRESHOLD: pop })
+        .on('force', (e) => ($('.meter i').style.width = e.force * 100 + '%'))
+        .on('peek', (e) => log(`peek at ${e.force.toFixed(2)}`))
+        .on('pop', (e) => log(`pop  at ${e.force.toFixed(2)}`))
+    }
+    $$('input').forEach((input) => (input.oninput = make))
+    make()
+  </script>
+</section>
+
+<section class="demo" id="demo-haptics-option">
+  <header><h3><a href="#demo-haptics-option">HAPTICS: true</a></h3></header>
+  <p class="desc">3D Touch made you feel every peek and pop. Forcify plays a light haptic on peek and a medium one on pop, where the platform allows. Android uses <code>navigator.vibrate</code>. On iOS 18 and later, Forcify borrows the haptic Safari plays when a switch toggles. Both are best-effort.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <div class="pad" id="haptics-on">true</div>
+          <div class="pad" id="haptics-off">false</div>
+        </div>
+        <p class="note">This device: <code class="haptics-mode"></code></p>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#haptics-on', { HAPTICS: true })
+    new Forcify('#haptics-off', { HAPTICS: false })
+
+    $('.haptics-mode').textContent = `Forcify.detection.HAPTICS === ${JSON.stringify(Forcify.detection.HAPTICS)}`
+  </script>
+</section>
+
+<section class="demo" id="demo-prevent-click">
+  <header><h3><a href="#demo-prevent-click">PREVENT_CLICK: true</a></h3></header>
+  <p class="desc">When a press reaches peek, the click that follows on release is swallowed, so a hard press doesn't also activate the button. Tap both buttons, then long-press both, and compare the counts.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <button type="button" class="pad" id="click-on">true<br>clicks: 0</button>
+          <button type="button" class="pad" id="click-off">false<br>clicks: 0</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    for (const [id, value] of [['click-on', true], ['click-off', false]]) {
+      const button = $('#' + id)
+      let clicks = 0
+      new Forcify(button, { PREVENT_CLICK: value })
+      button.onclick = () => (button.innerHTML = `${value}<br>clicks: ${++clicks}`)
+    }
+  </script>
+</section>
+
+<section class="demo" id="demo-native">
+  <header><h3><a href="#demo-native">DISABLE_NATIVE_GESTURES: true</a></h3></header>
+  <p class="desc">A long press normally belongs to the platform: the iOS callout and link preview, text selection, dragging, the Android context menu, and Look Up on a Mac. Forcify switches these off on its element. Long-press the right-hand link on a phone to see what it prevents.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <a class="pad" id="native-on" href="https://github.com/Huxpro/forcify">true<br>(a link)</a>
+          <a class="pad" id="native-off" href="https://github.com/Huxpro/forcify">false<br>(a link)</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#native-on', { DISABLE_NATIVE_GESTURES: true })
+    new Forcify('#native-off', { DISABLE_NATIVE_GESTURES: false })
+  </script>
+</section>
+
+<section class="demo" id="demo-css-variable">
+  <header><h3><a href="#demo-css-variable">CSS_VARIABLE: '--force'</a></h3></header>
+  <p class="desc">Forcify writes the force to a CSS custom property on the element, so styles can follow the press with no handler at all. Every pad on this page is filled this way. Use a different name, or <code>false</code> to turn it off.</p>
+  <style data-show>
+    .css-ball {
+      width: 72px; height: 72px; margin: 40px auto; border-radius: 50%;
+      background: hsl(calc(220 - var(--force, 0) * 220) 90% 60%);
+      scale: calc(1 + var(--force, 0) * 1.2);
+      rotate: calc(var(--force, 0) * 180deg);
+      border-radius: calc(50% - var(--force, 0) * 30%);
+      touch-action: none;
+    }
+  </style>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><div class="css-ball"></div></div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    // No handler: the CSS reads var(--force).
+    new Forcify($('.css-ball'), { CSS_VARIABLE: '--force' })
+  </script>
+</section>
+
+<section class="demo" id="demo-state-attribute">
+  <header><h3><a href="#demo-state-attribute">STATE_ATTRIBUTE: 'data-force-state'</a></h3></header>
+  <p class="desc">During a press the element carries <code>data-force-state="pressing"</code>, then <code>"peek"</code>, then <code>"pop"</code>. The attribute is removed when the press ends.</p>
+  <style data-show>
+    .state-card { padding: 28px; border-radius: 14px; text-align: center; background: var(--surface-2); transition: all .2s; touch-action: none; }
+    .state-card::after { content: 'idle'; font-family: var(--mono); }
+    .state-card[data-force-state='pressing']::after { content: 'pressing'; }
+    .state-card[data-force-state='peek'] { background: color-mix(in srgb, var(--accent) 25%, var(--surface-2)); }
+    .state-card[data-force-state='peek']::after { content: 'peek'; }
+    .state-card[data-force-state='pop'] { background: var(--pop); color: #fff; scale: 1.04; }
+    .state-card[data-force-state='pop']::after { content: 'pop!'; }
+  </style>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><div class="state-card"></div></div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify($('.state-card'), { STATE_ATTRIBUTE: 'data-force-state' })
+  </script>
+</section>
+
+<!-- ================================================================ STATIC -->
+
+<h2 id="static">Static API</h2>
+<p>These live on the <code>Forcify</code> class itself.</p>
+
+<section class="demo" id="demo-config">
+  <header><h3><a href="#demo-config">Forcify.config(options)</a></h3></header>
+  <p class="desc">Changes the defaults for every instance created afterwards. Existing instances keep their options. The 0.x form <code>{ defaults: { … } }</code> is still accepted.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pads">
+          <div class="pad" id="config-before">before config()<br>1000ms ramp</div>
+          <div class="pad" id="config-after">after config()<br>250ms ramp</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify('#config-before')
+
+    const previous = Forcify.defaults.LONG_PRESS_DURATION
+    Forcify.config({ LONG_PRESS_DURATION: 250 })
+    new Forcify('#config-after')
+
+    Forcify.config({ LONG_PRESS_DURATION: previous }) // restore for the other demos
+  </script>
+</section>
+
+<section class="demo" id="demo-defaults">
+  <header><h3><a href="#demo-defaults">Forcify.defaults</a></h3></header>
+  <p class="desc">The options object every new instance starts from.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><pre class="log" style="max-height:none"></pre></div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    $('pre').textContent = JSON.stringify(
+      Forcify.defaults,
+      (key, value) => (typeof value === 'function' ? String(value) : value),
+      2,
+    )
+  </script>
+</section>
+
+<section class="demo" id="demo-detection">
+  <header><h3><a href="#demo-detection">Forcify.detection</a></h3></header>
+  <p class="desc">What Forcify has learned about the device. Runtime flags flip the first time a real sample is seen. Press with whatever you have and watch them change. The full table is under <a href="#device">Your device</a>.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="pad">Press with anything</div>
+        <pre class="log" style="max-height:none"></pre>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify($('.pad'))
+    every(200, () => ($('pre').textContent = JSON.stringify(Forcify.detection, null, 2)))
+  </script>
+</section>
+
+<section class="demo" id="demo-haptic">
+  <header><h3><a href="#demo-haptic">Forcify.haptic(style?)</a></h3></header>
+  <p class="desc">Plays a <code>'light'</code>, <code>'medium'</code> or <code>'heavy'</code> haptic where possible. It returns whether a haptic mechanism was available. Use it for your own interactions, too.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="row">
+          <button type="button" value="light">light</button>
+          <button type="button" value="medium">medium</button>
+          <button type="button" value="heavy">heavy</button>
+        </div>
+      </div>
+      <ol class="log"></ol>
+    </div>
+  </div>
+  <script type="text/forcify">
+    $$('button').forEach((button) => {
+      button.onclick = () => log(`Forcify.haptic('${button.value}') → ${Forcify.haptic(button.value)}`)
+    })
+  </script>
+</section>
+
+<section class="demo" id="demo-version">
+  <header><h3><a href="#demo-version">Forcify.version</a></h3></header>
+  <p class="desc">The library version, as a string.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage"><output style="font-size:2rem;text-align:center"></output></div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    $('output').value = Forcify.version
+  </script>
+</section>
+
+<!-- =============================================================== RECIPES -->
+
+<h2 id="recipes">Recipes</h2>
+<p>Bigger ideas built from the same pieces.</p>
+
+<section class="demo" id="demo-drawing">
+  <header><h3><a href="#demo-drawing">Pressure drawing</a></h3></header>
+  <p class="desc">Line width follows pressure with Apple Pencil or any pen, and follows how long you hold with a finger or mouse. With a pen, the stroke also darkens as the pen tilts.</p>
+  <style>.drawing canvas { width: 100%; height: 260px; border-radius: 14px; background: var(--surface-2); touch-action: none; display: block; }</style>
+  <div class="body">
+    <div class="play">
+      <div class="stage drawing">
+        <canvas></canvas>
+        <div class="row"><button type="button">Clear</button> <span class="note">source: <output>—</output></span></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const canvas = $('canvas')
+    const ctx = canvas.getContext('2d')
+    const fit = () => {
+      const r = canvas.getBoundingClientRect()
+      canvas.width = r.width * devicePixelRatio
+      canvas.height = r.height * devicePixelRatio
+      ctx.scale(devicePixelRatio, devicePixelRatio)
+      ctx.lineCap = 'round'
+    }
+    fit()
+
+    const f = new Forcify(canvas, { HAPTICS: false, PREVENT_CLICK: false, LONG_PRESS_DELAY: 0, LONG_PRESS_DURATION: 600 })
+    let last = null
+
+    canvas.addEventListener('pointermove', (e) => {
+      const box = canvas.getBoundingClientRect()
+      const point = { x: e.clientX - box.left, y: e.clientY - box.top }
+      if (f.force > 0 && last) {
+        const tilt = Math.hypot(e.tiltX || 0, e.tiltY || 0) / 90
+        ctx.strokeStyle = `hsl(222 90% ${60 - tilt * 35}%)`
+        ctx.lineWidth = 1 + f.force * 18
+        ctx.beginPath()
+        ctx.moveTo(last.x, last.y)
+        ctx.lineTo(point.x, point.y)
+        ctx.stroke()
+      }
+      last = f.force > 0 ? point : null
+    })
+    f.on('forcestart', (e) => ($('output').value = e.source))
+    f.on('forceend', () => (last = null))
+    $('button').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height)
+  </script>
+</section>
+
+<section class="demo" id="demo-scrub">
+  <header><h3><a href="#demo-scrub">Press to fast-forward</a></h3></header>
+  <p class="desc">Force as a continuous control: the harder (or longer) you press, the faster the clock runs.</p>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <output style="font-size:2.5rem;text-align:center">00:00</output>
+        <div class="pad">Press to speed up</div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    const f = new Forcify($('.pad'), { PREVENT_CLICK: false })
+    let seconds = 0
+    every(50, () => {
+      seconds += 0.05 * (1 + f.force * 60)
+      const m = String(Math.floor(seconds / 60) % 60).padStart(2, '0')
+      const s = String(Math.floor(seconds) % 60).padStart(2, '0')
+      $('output').value = `${m}:${s}  ×${(1 + f.force * 60).toFixed(0)}`
+    })
+  </script>
+</section>
+
+<section class="demo" id="demo-reveal">
+  <header><h3><a href="#demo-reveal">Press to reveal</a></h3></header>
+  <p class="desc">A spoiler that clears as you press, using only the CSS variable plus a pop handler that keeps it revealed.</p>
+  <style data-show>
+    .spoiler { padding: 20px; border-radius: 14px; background: var(--surface-2); touch-action: none; }
+    .spoiler p { margin: 0; filter: blur(calc((1 - var(--force, 0)) * 8px)); }
+    .spoiler.revealed p { filter: none; }
+  </style>
+  <div class="body">
+    <div class="play">
+      <div class="stage">
+        <div class="spoiler"><p>Forcify was first released in October 2015, alongside the iPhone 6s and 3D Touch.</p></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/forcify">
+    new Forcify($('.spoiler')).on('pop', (e) => e.target.classList.add('revealed'))
+  </script>
+</section>
+
+<!-- ============================================================= REFERENCE -->
+
+<h2 id="install">Install &amp; module formats</h2>
+<p>Every build exports the same class. Each format has a live example page.</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Use</th><th>Code</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>npm</td><td><code>npm install forcify</code></td><td></td></tr>
+      <tr><td>ES module</td><td><code>import Forcify from 'forcify'</code></td><td><a href="examples/esm.html">esm.html</a></td></tr>
+      <tr><td>CommonJS</td><td><code>const Forcify = require('forcify')</code></td><td></td></tr>
+      <tr><td>&lt;script&gt;</td><td><code>&lt;script src="https://unpkg.com/forcify/dist/forcify.min.js"&gt;</code> → <code>window.Forcify</code></td><td><a href="examples/script-tag.html">script-tag.html</a></td></tr>
+      <tr><td>ESM from a CDN</td><td><code>import Forcify from 'https://unpkg.com/forcify/dist/forcify.mjs'</code></td><td></td></tr>
+      <tr><td>AMD</td><td><code>require(['forcify'], (Forcify) =&gt; …)</code></td><td><a href="examples/amd.html">amd.html</a></td></tr>
+      <tr><td>TypeScript</td><td>Types included: <code>ForceEvent</code>, <code>ForcifyOptions</code>, <code>HoverEvent</code>, …</td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="compatibility">Compatibility</h2>
+<p>The build targets ES2015: iOS 10+, Safari 10+, Chrome 51+, Firefox 54+, Edge 79+. For iOS 9 Safari, use <code>forcify@0.2</code>.</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Platform</th><th>Hardware</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>iPhone 6s – XS</td><td>3D Touch</td><td><code>touch3d</code></td></tr>
+      <tr><td>iPhone XR, 11 and later</td><td>Haptic Touch (no pressure)</td><td><code>longpress</code> + haptics on iOS 18+</td></tr>
+      <tr><td>iPad + Apple Pencil</td><td>Pressure, tilt, hover</td><td><code>pen</code>, <code>hover</code></td></tr>
+      <tr><td>Mac + Force Touch trackpad</td><td>Force Touch</td><td><code>forcetouch</code></td></tr>
+      <tr><td>Windows / ChromeOS / Linux + pen</td><td>Pressure, tilt, twist</td><td><code>pen</code></td></tr>
+      <tr><td>Android + stylus</td><td>Pressure</td><td><code>pen</code></td></tr>
+      <tr><td>Android touch</td><td>Contact area, not pressure</td><td><code>longpress</code> + vibration</td></tr>
+      <tr><td>Any mouse or touchscreen</td><td>—</td><td><code>longpress</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="ios">Across iOS generations</h2>
+<p>Forcify shipped with the iPhone 6s in 2015. The table shows how each iOS release since then changed pressure on the web. Every row is feature-detected at runtime, so one build works on all of them.</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Release</th><th>What changed</th><th>Forcify</th></tr></thead>
+    <tbody>
+      <tr><td>iOS 9 · 2015</td><td>3D Touch on iPhone 6s: <code>Touch.force</code>, no change event</td><td>Detects 3D Touch at runtime and polls the live Touch each frame</td></tr>
+      <tr><td>OS X 10.11 · 2015</td><td>Force Touch trackpads: <code>webkitmouseforce*</code>, <code>webkitForce</code></td><td>Maps click → max onto 0 → 1. A force click pops</td></tr>
+      <tr><td>iOS 9.1 · 2015</td><td>iPad Pro + Apple Pencil pressure in <code>Touch.force</code></td><td>Reads stylus touches as <code>pen</code>, not 3D Touch</td></tr>
+      <tr><td>iOS 10 · 2016</td><td><code>touchforcechange</code>. <code>touchType</code>, <code>altitudeAngle</code>, <code>azimuthAngle</code></td><td>Samples on each change event. Reports pen angles and derived tilt</td></tr>
+      <tr><td>iOS 12 · 2018</td><td>iPhone XR: first iPhone with Haptic Touch instead of 3D Touch</td><td>Long press reaches <code>peek</code> at 500 ms, like Haptic Touch</td></tr>
+      <tr><td>iOS 13 · 2019</td><td>iPhone 11 drops 3D Touch. Context menus replace Peek &amp; Pop. Safari ships Pointer Events. iPadOS asks for desktop sites</td><td>Pointer Events for every press; pen <code>pressure</code>. <code>detection.IOS</code> sees through the Mac UA. Native callouts suppressed</td></tr>
+      <tr><td>iPadOS 13.4 · 2020</td><td>Trackpad and mouse on iPad</td><td>Handled as <code>mouse</code> with long press</td></tr>
+      <tr><td>iPadOS 16.1 · 2022</td><td>Apple Pencil hover</td><td><code>hover</code> event with position and angles</td></tr>
+      <tr><td>iOS 17.4 · 2024</td><td><code>&lt;input type="checkbox" switch&gt;</code></td><td>—</td></tr>
+      <tr><td>iOS 18 · 2024</td><td>Switch toggles play a system haptic</td><td><code>Forcify.haptic()</code>: peek and pop can be felt again</td></tr>
+      <tr><td>iPadOS 17.5 · 2024</td><td>Apple Pencil Pro: squeeze, barrel roll</td><td>Passes <code>twist</code> through where reported</td></tr>
+      <tr><td>iOS 26 · 2025</td><td>Drops iPhone XS/XR: no iPhone on iOS 26 has 3D Touch</td><td>Long press + haptics on iPhone. Real pressure comes from Pencil on iPad</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>See <a href="https://github.com/Huxpro/forcify/blob/master/docs/compatibility.md">docs/compatibility.md</a> for caveats, and <a href="https://github.com/Huxpro/forcify/blob/master/MIGRATION.md">MIGRATION.md</a> to upgrade from 0.x.</p>
+
+  </main>
+</div>
+
+<footer>
+  Forcify <span data-version></span> · MIT License · © 2015–2026 <a href="https://huxpro.github.io">Hux</a> · <a href="https://github.com/Huxpro/forcify">GitHub</a>
+</footer>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

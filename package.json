@@ -52,7 +52,8 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm test && npm run build && npm run verify-dist",
     "prepublishOnly": "npm run check",
-    "verify-dist": "node scripts/verify-dist.mjs"
+    "verify-dist": "node scripts/verify-dist.mjs",
+    "site": "npm run build && node scripts/build-site.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
