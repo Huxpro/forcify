@@ -1,11 +1,9 @@
 .DS_Store
 node_modules
-*/node_modules
-npm-debug.log
+npm-debug.log*
 *.swp
-*.sh
 .sw*
-.sass-cache/
-*/.sass-cache/
-*.css.map
-cordova/
+*.tsbuildinfo
+coverage/
+dist/
+_site/
