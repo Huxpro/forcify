@@ -128,7 +128,10 @@ npm install
 npm test          # unit tests (Vitest + happy-dom)
 npm run typecheck
 npm run build     # dist/forcify.{mjs,cjs,umd.js,min.js} + type declarations
+npm run site      # build the website into _site/, then `npx serve _site`
 ```
+
+The website lives in [`site/`](site). Every demo there is a `<script type="text/forcify">` block that is shown as-is and run, so the code on the page is exactly the code that runs. A push to `master` deploys it to GitHub Pages.
 
 ## License
 
