@@ -1,13 +1,16 @@
 import type Forcify from './forcify'
+import type { Point } from './point'
 
 /**
  * Where a force value came from.
  *
  * - `touch3d`    — iPhone 3D Touch, read from `Touch.force`.
  * - `forcetouch` — macOS Force Touch trackpad, read from `MouseEvent.webkitForce`.
+ * - `pen`        — a pressure-sensitive stylus such as Apple Pencil, Surface Pen,
+ *                  S Pen or a Wacom tablet, read from `PointerEvent.pressure`.
  * - `longpress`  — emulated: the value ramps from 0 to 1 while the press is held.
  */
-export type ForceSource = 'touch3d' | 'forcetouch' | 'longpress'
+export type ForceSource = 'touch3d' | 'forcetouch' | 'pen' | 'longpress'
 
 /** The kind of pointer driving a press. Mirrors `PointerEvent.pointerType`. */
 export type PointerKind = 'mouse' | 'touch' | 'pen'
@@ -29,13 +32,14 @@ export interface ForcifyOptions {
    * long-press context menu and the macOS force-click Look Up.
    */
   DISABLE_NATIVE_GESTURES: boolean
+  /** Which pointers may press. Use `['pen']` for a stylus-only surface. */
+  POINTER_TYPES: PointerKind[]
 }
 
-export interface ForceEvent {
-  type: 'force'
-  /** Normalized force, from 0 (no force) to 1 (maximum). */
-  force: number
-  source: ForceSource
+export type { Point }
+
+/** Fields shared by every Forcify event. */
+export interface ForcifyEventBase {
   pointerType: PointerKind
   /** The DOM event that produced this value. */
   nativeEvent: Event
@@ -46,8 +50,27 @@ export interface ForceEvent {
   timeStamp: number
 }
 
+export interface ForceEvent extends ForcifyEventBase, Point {
+  type: 'force'
+  /** Normalized force, from 0 (no force) to 1 (maximum). */
+  force: number
+  source: ForceSource
+}
+
+/**
+ * A pen hovering above the element without touching it (Apple Pencil hover
+ * on iPadOS 16.1+, and most desktop pen tablets).
+ */
+export interface HoverEvent extends ForcifyEventBase, Point {
+  type: 'hover'
+  pointerType: 'pen'
+  /** `false` once the pen leaves the element, touches down or moves out of range. */
+  hovering: boolean
+}
+
 export interface ForcifyEventMap {
   force: ForceEvent
+  hover: HoverEvent
 }
 
 export type ForcifyEventName = keyof ForcifyEventMap
@@ -68,4 +91,10 @@ export interface ForcifyDetection {
   ANDROID: boolean
   /** The browser supports Pointer Events. */
   POINTER_EVENTS: boolean
+  /** The browser fires `touchforcechange` (iOS 10+). */
+  TOUCH_FORCE_EVENT: boolean
+  /** A pen with real pressure has been seen. Detected at runtime. */
+  PEN_PRESSURE: boolean
+  /** A pen hovering above the screen has been seen. Detected at runtime. */
+  PEN_HOVER: boolean
 }

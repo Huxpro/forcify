@@ -10,8 +10,10 @@ import { defaults } from './defaults'
 import { detection } from './detection'
 import { bindMouseForce } from './inputs/mouse-force'
 import { bindNativeGestures } from './inputs/native-gestures'
+import { bindPen } from './inputs/pen'
 import { bindPress } from './inputs/press'
 import { bindTouchForce } from './inputs/touch-force'
+import type { Point } from './point'
 import type {
   ForceEvent,
   ForceSource,
@@ -20,6 +22,7 @@ import type {
   ForcifyEventName,
   ForcifyHandler,
   ForcifyOptions,
+  HoverEvent,
   PointerKind,
 } from './types'
 import { clamp01, now, report, type Teardown } from './utils'
@@ -32,8 +35,10 @@ export interface Gesture {
   /** `null` until a force value has been produced. */
   source: ForceSource | null
   startTime: number
-  startX: number
-  startY: number
+  /** Where the press started. */
+  origin: Point
+  /** Where the pointer is now. */
+  point: Point
   /** Pending long-press timer. */
   timer: ReturnType<typeof setTimeout> | undefined
   /** Pending animation frame of the long-press ramp. */
@@ -90,6 +95,8 @@ export default class Forcify {
 
   /** @internal */ _gesture: Gesture | null = null
   /** @internal */ _lastTouch = -Infinity
+  /** @internal */ _hovering = false
+  private _lastKey = ''
   private _handlers: { [K in ForcifyEventName]?: Array<ForcifyHandler<K>> } = {}
   private _teardown: Teardown[] = []
 
@@ -101,9 +108,11 @@ export default class Forcify {
     this.uid = ++uid
     this.element = resolve(target)
     this.options = Object.assign({}, Forcify.defaults, options)
+    this.options.POINTER_TYPES = this.options.POINTER_TYPES.slice()
 
     this._teardown.push(
       ...bindPress(this),
+      ...bindPen(this),
       ...bindTouchForce(this),
       ...bindMouseForce(this),
       ...bindNativeGestures(this),
@@ -152,15 +161,16 @@ export default class Forcify {
   // ---------------------------------------------------------------------------
 
   /** @internal A press started. Starts the long-press fallback if appropriate. */
-  _begin(pointerType: PointerKind, id: number, x: number, y: number, event: Event): Gesture {
+  _begin(pointerType: PointerKind, id: number, point: Point, event: Event): Gesture {
     if (this._gesture) return this._gesture
+    if (this._hovering) this._hover(point, false, event)
     const gesture: Gesture = (this._gesture = {
       pointerType,
       id,
       source: null,
       startTime: now(),
-      startX: x,
-      startY: y,
+      origin: point,
+      point,
       timer: undefined,
       frame: 0,
       event,
@@ -173,14 +183,15 @@ export default class Forcify {
   }
 
   /** @internal The pressing pointer moved. Cancels a long press that has not started yet. */
-  _move(x: number, y: number, event: Event): void {
+  _move(point: Point, event: Event): void {
     const g = this._gesture
     if (!g) return
     g.event = event
+    g.point = point
     if (g.timer === undefined) return
     const tolerance = this.options.LONG_PRESS_TOLERANCE
-    const dx = x - g.startX
-    const dy = y - g.startY
+    const dx = point.x - g.origin.x
+    const dy = point.y - g.origin.y
     if (dx * dx + dy * dy > tolerance * tolerance) {
       clearTimeout(g.timer)
       g.timer = undefined
@@ -188,10 +199,11 @@ export default class Forcify {
   }
 
   /** @internal A real pressure sample arrived. Replaces any emulation for this press. */
-  _sample(source: ForceSource, force: number, nativeEvent: Event): void {
+  _sample(source: ForceSource, force: number, nativeEvent: Event, point?: Point): void {
     const g = this._gesture
     if (!g) return
     g.event = nativeEvent
+    if (point) g.point = point
     if (g.source !== source) {
       this._cancel()
       g.source = source
@@ -210,11 +222,18 @@ export default class Forcify {
     if (this.force !== 0) this._emit(g, 0)
   }
 
+  /** @internal Whether this kind of pointer may press, per POINTER_TYPES. */
+  _accepts(pointerType: string): pointerType is PointerKind {
+    return this.options.POINTER_TYPES.indexOf(pointerType as PointerKind) > -1
+  }
+
   private _canFallback(pointerType: PointerKind): boolean {
     if (!this.options.FALLBACK_TO_LONGPRESS) return false
-    // A 3D Touch screen reports real force for every touch, so a light touch
-    // really is force 0 and must not be turned into a fake press.
-    return !(pointerType === 'touch' && detection.TOUCH3D)
+    // A 3D Touch screen or a pressure pen reports real force for every press,
+    // so a light press really is force 0 and must not become a fake one.
+    if (pointerType === 'touch') return !detection.TOUCH3D
+    if (pointerType === 'pen') return !detection.PEN_PRESSURE
+    return true
   }
 
   private _longPress(): void {
@@ -243,15 +262,35 @@ export default class Forcify {
     g.frame = 0
   }
 
+  /** @internal A pen is hovering over the element without touching it. */
+  _hover(point: Point, hovering: boolean, nativeEvent: Event): void {
+    this._hovering = hovering
+    this._dispatch('hover', {
+      type: 'hover',
+      hovering,
+      ...point,
+      pointerType: 'pen',
+      nativeEvent,
+      target: this.element,
+      instance: this,
+      timeStamp: now(),
+    } satisfies HoverEvent)
+  }
+
+  /** Emits when the force or, for real pressure, the pen position or angle changed. */
   private _emit(g: Gesture, value: number): void {
     const force = clamp01(value)
-    if (force === this.force) return
+    const p = g.point
+    const key = `${force},${p.x},${p.y},${p.tiltX},${p.tiltY},${p.twist}`
+    if (force === this.force && (key === this._lastKey || force === 0)) return
     this.force = force
+    this._lastKey = key
     this._dispatch('force', {
       type: 'force',
       force,
       source: g.source || 'longpress',
       pointerType: g.pointerType,
+      ...p,
       nativeEvent: g.event,
       target: this.element,
       instance: this,

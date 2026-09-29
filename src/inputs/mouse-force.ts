@@ -12,6 +12,7 @@
 
 import { detection } from '../detection'
 import type Forcify from '../forcify'
+import { fromPointer } from '../point'
 import { clamp01, listen, type Teardown } from '../utils'
 
 type ForceMouseEvent = MouseEvent & { webkitForce?: number }
@@ -38,11 +39,11 @@ export function bindMouseForce(f: Forcify): Teardown[] {
       const g = f._gesture
       if (!g || g.pointerType !== 'mouse' || !(e.webkitForce! > 0)) return
       detection.OSXFORCE = true
-      f._sample('forcetouch', normalizeWebkitForce(e.webkitForce!), e)
+      f._sample('forcetouch', normalizeWebkitForce(e.webkitForce!), e, fromPointer(e))
     }),
     listen<ForceMouseEvent>(el, 'webkitmouseforcechanged', (e) => {
       if (f._gesture?.source === 'forcetouch') {
-        f._sample('forcetouch', normalizeWebkitForce(e.webkitForce || 0), e)
+        f._sample('forcetouch', normalizeWebkitForce(e.webkitForce || 0), e, fromPointer(e))
       }
     }),
   ]
