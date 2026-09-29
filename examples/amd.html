@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forcify · AMD</title>
+<link rel="stylesheet" href="style.css">
+<main>
+  <h1>Press the ball</h1>
+  <div class="ball" id="ball"></div>
+  <output id="out">force 0.000</output>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.7/require.min.js"></script>
+<script>
+  require.config({ paths: { forcify: '../dist/forcify.min' } })
+  require(['forcify'], function (Forcify) {
+    new Forcify('#ball').on('force', function (e) {
+      document.getElementById('out').textContent = 'force ' + e.force.toFixed(3) + ' · ' + e.source
+    })
+  })
+</script>

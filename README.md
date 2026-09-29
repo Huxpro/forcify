@@ -1,275 +1,125 @@
 # Forcify
 
-> Use **Force Touch** in any device, today.
+> Use **force** on any device, today.
 
-# WARNING: This project is not actively maintained.
+Forcify gives you one `force` value, from 0 to 1, whatever the hardware: 3D Touch iPhones, Force Touch trackpads, and pressure pens like Apple Pencil, Surface Pen, S Pen or Wacom tablets. On devices with no pressure at all, a long press stands in for it. It also adds Peek & Pop events, haptics and CSS hooks on top.
 
-## Intro
+```js
+import Forcify from 'forcify'
 
-Forcify is a JavaScript library help you polyfill 3D/Force Touch in any device. All you need is just deal with the `e.force` value, dead simple:
-
-```javascript
-var ele = document.querySelector('#force')
-
-new Forcify(ele).on('force', (e) => {
-    doSomething(e.force)
-})
+new Forcify('#card')
+  .on('force', (e) => (e.target.style.scale = 1 + e.force / 2))
+  .on('peek', () => showPreview())
+  .on('pop', () => openCard())
 ```
 
-Waaaaait! Can 3D/Force Touch, a hardware feature, be really polyfilled? No, but we can emulate it with Long Press!   
-**Forcify can help you start supporting Force Touch feature to your app or site without hesitate.**   
+**[Live demos and full documentation →](https://huxpro.github.io/forcify)**
 
-[Check out demo in any unsupported device →](https://huxpro.github.io/forcify)
+## Install
 
-[Download Forcify.min.js (2.4kb not gzipped)](https://huxpro.github.io/forcify/dist/forcify.min.js)
+```bash
+npm install forcify
+```
 
-
-## How Forcify Works?
-
-1. Forcify use a ***Dynamic Feature Detection*** to detect whether the 3D/Force Touch is really supported: **If true**, all hack stops, forcify just wrap the difference between *OSX Force Touch* and *iOS 3D Touch*, make things easier.
-2. If Forcify detect that ***Current Browser Behave Badly (not truly support but give a `!== 0` force value)***, Forcify would help you **shim these weird browser**, you would not get a wrong force value to mis-trigger your handlers.
-3. Finally, Forcify ***emulate a fake force event with LONG PRESS*** in any unsupported device as the **fallback**, to keep pushing events with a growing `force` value after long press triggered, which help your shortcut actions designed for Force Touch can be used in any other device.
-
-Also, Forcify provide many options such as `FALLBACK_TO_LONGPRESS`, `LONG_PRESS_DELAY`, `LONG_PRESS_DURATION` and `SHIM_WEIRD_BROWSER` to let you customize it as you need, more on [Document](#document).
-
-
-## Why Forcify?
-
-3D/Force Touch release new `webkitForce` (Force Touch) and `force` (3D Touch) property to mouse and touch events. But, different browsers implement them in really different and weird way, let's have a quick glance:
-
-Desktop:
-
-Browser | support |`force` | `webkitForce` | `events`
-------- | ------- | ------ | ------------- | --------
-OSX Safari | Force Touch | null  | 0 ~ 1 by Force | webkitmouseforce
-OSX Safari | null        | null  | 0              | mouse
-Chrome     | null        | null  | null           | mouse
-Chrome Touchable-PC | null | 0   | null           | touch
-
-Mobile:
-
-Browser | support |`force` | `webkitForce` | `events`
-------- | ------- | ------ | ------------- | --------
-iPhone Safari        | 3D Touch | 0 ~ 1 by Force       | null | touch
-iPhone Safari        | null | 0                        | null | touch
-Chrome Mobile        | null | 1                        | 1    | touch
-Chrome Mobile Nexus5 | null | **0 ~ 1 by touch area!** | same | touch
-Chrome Emulator      | null | 1                        | null | touch
-Android Browser      | null | null                     | null | touch
-
-
-
-As you see, even just supporting the real OSX Force Touch and iOS 3D Touch you need write twice, and it is not that easy as you thought:
-
-- In OSX Safari we have awesome `webkitmouseforcewillbegin` and `webkitmouseforcechange` to get value every time changed directly.
-- in iOS Safari we have old `touchdown`, `touchmove`, `touchup` only. We has to use *polling* to repeat poll the `force` value during the entire touch duration.
-
-Things gonna worse when you look at **Chrome**. Chrome on all device nowadays haven't any Force Touch support, but It provide a tricky `!== 0` force value in many platform!
-
-- In Chrome Mobile, we got `force=1` and `webkitForce=1`, which means your "Force Actions" would be ALWAYS triggered just by a click
-* In Chrome on Nexus5, *unbelievable magic happen!*, the force value is given by the area your finger touch to the screen! This bad trick really make engineer awkwardly
-
-That is why Forcify comes to help.
-
-
-## Document
-
-> Check out `example/` to get a detailed example
-
-### Install
-
-The simplest way to use Forcify is adding it to your HTML page with `<script>`:
+Or load it from a CDN:
 
 ```html
+<!-- ES module -->
+<script type="module">
+  import Forcify from 'https://unpkg.com/forcify/dist/forcify.mjs'
+</script>
+
+<!-- classic script: exposes window.Forcify (also works with AMD) -->
 <script src="https://unpkg.com/forcify/dist/forcify.min.js"></script>
 ```
 
-And you can also include Forcify in your JavaScript bundle with ES6, CommonJS or AMD syntax.
+`require('forcify')` returns the class, and TypeScript types are included.
 
-```bash
-$ npm install forcify --save
+## How it works
+
+1. **Real pressure when there is some.** Forcify reads `Touch.force` on 3D Touch iPhones, `webkitForce` on Force Touch trackpads and `PointerEvent.pressure` on pens. 3D Touch and pen pressure cannot be feature-detected, so it watches for the first genuine sample and switches over as soon as one arrives.
+2. **No bogus values.** Chrome used to report `force: 1` for every touch, and Android reports finger *area* as force. Forcify recognizes these cases and ignores them (`SHIM_WEIRD_BROWSER`).
+3. **A long press everywhere else.** After `LONG_PRESS_DELAY` the force ramps from 0 to 1 over `LONG_PRESS_DURATION`. The ramp is cancelled if the pointer moves or the page scrolls. With the defaults, `peek` fires at 500 ms, the same timing as iOS Haptic Touch.
+
+See [docs/compatibility.md](docs/compatibility.md) for the full matrix and for what changed across every iOS generation since 2015.
+
+## Events
+
+```js
+const f = new Forcify(element, options)
+f.on(type, handler)   // chainable; also once(type, handler) and off([type], [handler])
 ```
 
-### Usage
+| Event | When |
+| --- | --- |
+| `forcestart` | force rises above 0 for the first time in a press |
+| `force` | force changes (or, for pens, position or angle changes) |
+| `peek` | force reaches `PEEK_THRESHOLD`, once per press |
+| `pop` | force reaches `POP_THRESHOLD`, or a macOS force click, once per press |
+| `forceend` | a press that had force ends |
+| `hover` | a pen hovers over the element (Apple Pencil hover, pen tablets) |
 
-Create a new Forcify instance, and use `on` to listen `force` event:
+Every force event carries:
 
-```javascript
-var ele  = document.querySelector('#force')
-var $ele = new Forcify(ele)
-
-// add event listener
-$ele.on('force', (e) => {
-    doSomething(e.force)
-})
+```ts
+{
+  type, force,              // 0–1
+  source,                   // 'touch3d' | 'forcetouch' | 'pen' | 'longpress'
+  pointerType,              // 'touch' | 'mouse' | 'pen'
+  x, y,                     // client coordinates
+  tiltX, tiltY, twist,      // pen tilt and rotation, in degrees
+  altitudeAngle, azimuthAngle, // pen angles, in radians
+  maxForce, peeked, popped, // the press so far
+  nativeEvent, target, instance, timeStamp,
+}
 ```
 
-You can pass `options` into the `Forcify` constructor to override [default options](#forcifydefaults):
+`hover` events carry `hovering` (which is `false` when the pen leaves) plus the same position and angle fields.
 
-```javascript
-// only emit event in real supported device.
-var $noFallback = new Forcify(ele, {
-    FALLBACK_TO_LONGPRESS: false
-})
+## Options
 
-// I am sure there would be a mess watting for u
-var $noShim = new Forcify(ele, {
-	SHIM_WEIRD_BROWSWR: false
-})
+Pass options to the constructor, or change the defaults for every new instance with `Forcify.config({ ... })`.
 
-// not easy to trigger...
-var $longLongPress = new Forcify(ele, {
-	LONG_PRESS_DELAY: 10000 	//ms
-})
-```
+| Option | Default | |
+| --- | --- | --- |
+| `LONG_PRESS_DELAY` | `200` | ms before the emulated force starts |
+| `LONG_PRESS_DURATION` | `1000` | ms for the emulated force to ramp from 0 to 1 |
+| `LONG_PRESS_TOLERANCE` | `10` | px a pointer may move before a pending long press is cancelled |
+| `LONG_PRESS_EASING` | `t => t` | shapes the emulated ramp |
+| `FALLBACK_TO_LONGPRESS` | `true` | emulate force on devices without pressure |
+| `SHIM_WEIRD_BROWSER` | `true` | ignore bogus force values from Chrome and Android |
+| `POINTER_TYPES` | `['mouse', 'touch', 'pen']` | which pointers may press |
+| `PEEK_THRESHOLD` | `0.3` | force at which `peek` fires |
+| `POP_THRESHOLD` | `0.6` | force at which `pop` fires |
+| `HAPTICS` | `true` | play a haptic on peek and pop (Android, iOS 18+) |
+| `PREVENT_CLICK` | `true` | swallow the click after a press that peeked |
+| `DISABLE_NATIVE_GESTURES` | `true` | turn off the iOS callout and link preview, selection, dragging, the Android context menu and macOS Look Up on the element |
+| `CSS_VARIABLE` | `'--force'` | CSS custom property that mirrors the force, or `false` |
+| `STATE_ATTRIBUTE` | `'data-force-state'` | attribute set to `pressing`, `peek` or `pop` during a press, or `false` |
 
-Also, you can use `Forcify.config` to override default options globally
+With the CSS hooks you can often skip JavaScript entirely:
 
-```javascript
-// let's make duration of the force grow slower.
-Forcify.config({
-	LONG_PRESS_DURATION: 500
-})
-
+```css
+.card { scale: calc(1 + var(--force, 0) * 0.2); }
+.card[data-force-state="pop"] { outline: 2px solid; }
 ```
 
 ## API
 
-
-### Forcify.defaults
-
-Default options for Forcify instance.
-
-##### `LONG_PRESS_DELAY: 200`
-
-- Type: `Number`
-- Default `200(ms)`
-- Delay to trigger fake Force Touch
-
-
-
-##### `LONG_PRESS_DURATION: 1000`
-
-* Type: `Number`
-* Default `1000(ms)`
-* Duration from MIN to MAX of the fake Force Touch
-
-
-
-##### `LONG_PRESS_TOLERANCE: 10`
-
-* Type: `Number`
-* Default `10(px)`
-* How far a pointer may move before a pending long press is cancelled, so scrolling never triggers fake force
-
-
-##### `FALLBACK_TO_LONGPRESS: true`
-
-* Type: `Boolean`
-* Default `true`
-* if Forcify fallback to long press on unsupport devices. if set false, Forcify will not fallback 'force' to 'long press'
-
-
-##### `SHIM_WEIRD_BROWSER: true`
-
-* Type: `Boolean`
-* Default `true`
-* Some browser, such as Chrome, provide a very weird force value.  if set false, Forcify would not try to find and ignore those weird behavior. Which means your "Force Actions" may
-	- be triggered just by a click in some 'force: 1' devices.
-	- be influenced in device like Nexus5 to give a force in (0,1)
-
-
-##### `DISABLE_NATIVE_GESTURES: true`
-
-* Type: `Boolean`
-* Default `true`
-* Turn off the platform's own long/hard-press behaviour on the element: the iOS callout and link preview, text selection, dragging, the Android long-press context menu and macOS force-click Look Up.
-
-
-##### `POINTER_TYPES: ['mouse', 'touch', 'pen']`
-
-* Type: `Array`
-* Default `['mouse', 'touch', 'pen']`
-* Which pointers may press. `['pen']` makes a stylus-only surface.
-
-
-##### `PEEK_THRESHOLD: 0.3` / `POP_THRESHOLD: 0.6`
-
-Force at which `peek` and `pop` fire, once per press. A macOS force click always pops.
-
-##### `HAPTICS: true`
-
-Play a haptic on peek and pop where the platform allows: `navigator.vibrate` on Android, a system switch haptic on iOS 18+. Best-effort.
-
-##### `PREVENT_CLICK: true`
-
-Swallow the click that follows a press that reached peek.
-
-##### `LONG_PRESS_EASING: t => t`
-
-Shapes the emulated ramp.
-
-##### `CSS_VARIABLE: '--force'` / `STATE_ATTRIBUTE: 'data-force-state'`
-
-Mirror the force into a CSS custom property, and the press state (`pressing`, `peek`, `pop`) into an attribute, so styles can react without JavaScript. `false` turns either off.
-
-
-### Instance
-
-##### `on(type, handler)` / `once(type, handler)` / `off([type], [handler])`
-
-Add and remove listeners.
-
-- `force` — `{ force, source, pointerType, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, nativeEvent, target, instance, timeStamp }`. `source` is `'touch3d'`, `'forcetouch'`, `'pen'` (Apple Pencil, Surface Pen, S Pen, Wacom…) or `'longpress'`.
-- `forcestart`, `peek`, `pop`, `forceend` — the life of a press, each carrying `maxForce`, `peeked` and `popped`.
-- `hover` — a pen hovering above the element (Apple Pencil hover on iPadOS 16.1+, desktop pen tablets): `{ hovering, x, y, tiltX, tiltY, twist, altitudeAngle, azimuthAngle, … }`.
-
-##### `destroy()`
-
-Remove every listener Forcify added and restore the element's styles.
-
-##### `force`
-
-The latest force value, from 0 to 1.
-
-
-### Forcify.haptic([style])
-
-Play a `'light'`, `'medium'` or `'heavy'` haptic where possible. Returns whether a mechanism was available.
-
-
-### Forcify.detection
-
-Object save the results of dynamic detection. All fields is `Boolean` type and default `false`.
-
-##### `TOUCH3D`
-
-Unfortunately there is not a feature detection for 3DTouch so far, so Forcify use a dynamic detection to detect it.  
-If Forcify detects that force is support, all hacking stop.
-
-
-##### `OSXFORCE`
-
-OSX support real webkit force touch
-
-
-##### `WEIRD_CHROME`
-
-Chrome Mobile give any touchevent a 'force' property with value: 1.   
-Forcify has to hack it.  
-Forcify not detect Weird Chrome by UA but behaviors.
-
-##### `POINTER_EVENTS`, `TOUCH_FORCE_EVENT`
-
-Static feature detection: Pointer Events, and iOS 10+'s `touchforcechange`.
-
-##### `PEN_PRESSURE`, `PEN_HOVER`
-
-A pen with real pressure, or a hovering pen, has been seen.
-
-##### `IOS`, `HAPTICS`
-
-iOS/iPadOS (including iPadOS asking for desktop sites), and the haptic mechanism: `'vibrate'`, `'switch'` or `false`.
+**Instance:** `on`, `once`, `off`, `destroy()` (removes every listener and restores the element), `force` (the latest value), `element`, `options`.
+
+**Static:**
+
+- `Forcify.config(options)` changes the defaults. The 0.x `{ defaults: {...} }` form still works.
+- `Forcify.defaults` is the options object every new instance starts from.
+- `Forcify.haptic(style?)` plays a `'light'`, `'medium'` or `'heavy'` haptic where possible and returns whether a mechanism was available.
+- `Forcify.detection` is what Forcify has learned about the device:
+  - `TOUCH3D`, `OSXFORCE`, `PEN_PRESSURE`, `PEN_HOVER` and `WEIRD_CHROME` flip to `true` at runtime.
+  - `POINTER_EVENTS`, `TOUCH_FORCE_EVENT`, `IOS` and `ANDROID` come from feature and user-agent checks.
+  - `HAPTICS` is `'vibrate'`, `'switch'` or `false`.
+- `Forcify.version` is the library version.
+
+Upgrading from 0.x? See [MIGRATION.md](MIGRATION.md).
 
 ## Development
 
@@ -280,9 +130,6 @@ npm run typecheck
 npm run build     # dist/forcify.{mjs,cjs,umd.js,min.js} + type declarations
 ```
 
-## Thanks
+## License
 
-Special thank to:
-
-- [This nice post about iOS9](http://www.mobilexweb.com/blog/ios9-safari-for-web-developers) inspired me to create Forcify.
-- [3D Touch Demo](https://github.com/freinbichler/3d-touch) by @freinbichler, which I used in my examples.
+MIT © [Hux](https://huxpro.github.io)
