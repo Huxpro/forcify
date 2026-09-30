@@ -108,6 +108,8 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 24px; -webkit-text-size-adjust: 100%; }
+/* Shockwaves spread past the column; clip them without making a scroller. */
+html, body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
@@ -167,7 +169,38 @@ strong { color: var(--fg); font-weight: 500; }
 }
 .lede { font-size: 1.125rem; line-height: 1.6; margin: 0; max-width: 34rem; text-wrap: pretty; }
 
+/* The hero's force, registered so it can spring back on release: every
+   effect below reads this one number. It is set on <html> because the veil
+   that blurs the page lives outside the hero. */
+@property --hero-force { syntax: '<number>'; inherits: true; initial-value: 0; }
+:root { --hero-force: 0; --spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
+:root.releasing { transition: --hero-force 560ms var(--spring); }
+
+/* Depth: under a hard press everything but the disc blurs, dims and recedes,
+   the way iOS drops the page behind a peek. The 2015 homepage did the same
+   with its background. */
+.veil {
+  --f: max(0, var(--hero-force));
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  visibility: hidden;
+  background: color-mix(in oklab, var(--page) calc(var(--f) * 55%), transparent);
+  -webkit-backdrop-filter: blur(calc(var(--f) * 16px)) saturate(calc(1 - var(--f) * 0.6));
+  backdrop-filter: blur(calc(var(--f) * 16px)) saturate(calc(1 - var(--f) * 0.6));
+}
+.veil[data-on] { visibility: visible; }
+.veil[data-flash] { animation: flash 460ms ease-out; }
+@keyframes flash { from { background: color-mix(in oklab, var(--ink) 16%, var(--page) 40%); } }
+.hero-copy {
+  transform: scale(calc(1 - max(0, var(--hero-force)) * 0.04));
+  transform-origin: 50% 0;
+}
+
 .instrument {
+  position: relative;
+  z-index: 30;
   align-self: stretch;
   display: grid;
   place-items: center;
@@ -176,7 +209,6 @@ strong { color: var(--fg); font-weight: 500; }
 }
 .disc-wrap { position: relative; width: 132px; height: 132px; display: grid; place-items: center; }
 .disc {
-  --s: calc(1 + var(--force, 0) * 0.22);
   width: 104px;
   height: 104px;
   border-radius: 50%;
@@ -184,23 +216,30 @@ strong { color: var(--fg); font-weight: 500; }
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-raised), inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
-  transform: scale(var(--s));
+  box-shadow:
+    var(--shadow-raised),
+    0 calc(var(--hero-force) * 30px) calc(var(--hero-force) * 60px) calc(var(--hero-force) * -10px) rgb(0 0 0 / 0.25),
+    inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
+  transform: scale(calc(1 + var(--hero-force) * 1.3));
   cursor: pointer;
   touch-action: none;
   position: relative;
 }
-/* Force made visible as ink rising inside the glass. */
+/* Force made visible as ink filling the glass. */
 .disc::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: var(--ink);
-  opacity: calc(var(--force, 0) * 0.14);
+  opacity: calc(max(0, var(--hero-force)) * 0.85);
 }
-.disc[data-force-state='pop'] { animation: lift 0.28s var(--ease-sheet) both; }
-@keyframes lift { from { transform: scale(var(--s)); } 50% { transform: scale(calc(var(--s) + 0.05)); } to { transform: scale(var(--s)); } }
+/* The hits. `scale` composes with the force's `transform`, so the disc keeps
+   its size and the knock plays on top of it. */
+.disc[data-force-state='peek'] { animation: nudge 260ms var(--ease-release); }
+.disc[data-force-state='pop'] { animation: thud 520ms cubic-bezier(0.2, 0.9, 0.25, 1); }
+@keyframes nudge { 40% { scale: 1.06; } }
+@keyframes thud { 16% { scale: 1.18; } 40% { scale: 0.92; } 64% { scale: 1.05; } 84% { scale: 0.99; } }
 /* HoldRing: the charge drawn where the finger isn't. It appears late, closes
    onto the disc's edge as force nears pop, and turns solid when it gets there. */
 .hold-ring {
@@ -212,10 +251,45 @@ strong { color: var(--fg); font-weight: 500; }
   opacity: 0;
   transform: scale(1.3);
 }
-.hold-ring[data-closed] { border-color: var(--fg); }
-.readout { display: grid; justify-items: center; gap: 2px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.readout b { font-weight: 400; font-size: 15px; color: var(--fg); }
-.readout span { font-size: 12px; color: var(--fg-3); }
+.hold-ring[data-closed] { border-color: var(--fg); border-width: 2px; }
+/* Shockwaves off the disc's edge at peek and pop. */
+.shock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  border-radius: 50%;
+  border: 2px solid var(--fg);
+  pointer-events: none;
+  animation: shock 760ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes shock {
+  from { opacity: var(--o, 0.6); transform: scale(1); }
+  to { opacity: 0; transform: scale(var(--to, 2.4)); border-width: 0.5px; }
+}
+/* The value sits in the disc and inverts against whatever is under it, so it
+   reads on the bare glass and on full ink alike. */
+.disc-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font: 500 15px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: white;
+  mix-blend-mode: difference;
+  transform: scale(calc(1 + max(0, var(--hero-force)) * 0.6));
+}
+/* Below the disc's largest size, so the growing disc never covers it. */
+.readout {
+  margin-top: 2.5rem;
+  font: 12px var(--mono);
+  color: var(--fg-3);
+  text-align: center;
+}
 .install {
   font: 13px var(--mono);
   color: var(--fg-2);
@@ -294,9 +368,11 @@ main p { margin: 0 0 1rem; text-wrap: pretty; }
   touch-action: none;
   position: relative;
   overflow: hidden;
-  transform: scale(calc(1 + var(--force, 0) * 0.03));
+  transform: scale(calc(1 + var(--force, 0) * 0.05));
   transition: border-color 0.2s, color 0.2s;
 }
+.pad[data-force-state='peek'] { animation: nudge 240ms var(--ease-release); }
+.pad[data-force-state='pop'] { animation: thud 480ms cubic-bezier(0.2, 0.9, 0.25, 1); }
 .pad[data-force-state] { color: var(--fg-2); }
 .pad[data-force-state='peek'] { border-color: var(--fg-3); }
 .pad[data-force-state='pop'] { border-color: var(--fg); color: var(--fg); }
@@ -499,7 +575,9 @@ kbd {
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 @media (prefers-reduced-motion: reduce) {
-  .palette, .palette-scrim { animation: none; }
+  .palette, .palette-scrim, .disc, .pad, .veil { animation: none !important; }
+  .shock { display: none; }
+  :root.releasing { transition-timing-function: ease-out; }
 }
 
 @media (max-width: 480px) {

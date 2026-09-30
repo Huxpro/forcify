@@ -27,6 +27,7 @@
 <div class="page">
 
 <header class="hero">
+  <div class="hero-copy">
   <div class="identifier system-voice">
     <a href="https://hux.pro" data-scramble="cd ~">λhux</a><span class="sep">/</span><span>forcify</span>
   </div>
@@ -38,15 +39,16 @@
     <span lang="en">Forcify turns every press into one <em>force</em> value from 0 to 1. It reads real pressure from 3D Touch, Force Touch trackpads and pens, and uses a long press on everything else.</span>
     <span lang="zh">Forcify 把每一次按压变成一个 0 到 1 的 <em>force</em> 值。3D Touch、Force Touch 触控板和压感笔会给出真实压力，其他设备上用长按代替。</span>
   </p>
+  </div>
 
   <div class="instrument system-chrome">
     <div class="disc-wrap">
       <div class="disc pressable" role="img" aria-label="Press and hold to see the force value"></div>
       <span class="hold-ring" aria-hidden="true"></span>
+      <output class="disc-value" aria-live="polite">0.000</output>
     </div>
-    <div class="readout" aria-live="polite">
-      <b>0.000</b>
-      <span><span lang="en">press the disc, and hold</span><span lang="zh">按住圆盘</span></span>
+    <div class="readout">
+      <span lang="en">press the disc, and hold</span><span lang="zh">按住圆盘</span>
     </div>
     <button type="button" class="install pressable" title="Copy">npm i forcify</button>
   </div>

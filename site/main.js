@@ -32,29 +32,78 @@ function said(el) {
 const disc = document.querySelector('.disc')
 const ring = document.querySelector('.hold-ring')
 const readout = document.querySelector('.readout')
+const value = document.querySelector('.disc-value')
 const DISC = 104
 const WRAP = 132
+const GROW = 1.3 // the disc reaches 1 + GROW times its size at force 1
+
+const veil = document.createElement('div')
+veil.className = 'veil'
+veil.setAttribute('aria-hidden', 'true')
+document.body.prepend(veil)
+let settle = 0
+
+function setHeroForce(force) {
+  root.style.setProperty('--hero-force', force)
+  clearTimeout(settle)
+  if (force > 0) veil.setAttribute('data-on', '')
+  // Keep the veil until the spring has settled, then take its layer away.
+  else settle = setTimeout(() => veil.removeAttribute('data-on'), 700)
+}
 
 // The ring is Hux's HoldRing: it shows up only in the second half of the
 // way to pop, a little outside the disc, and closes onto its edge as the
 // press arrives. A tap never sees it.
 function paintRing(force, pop) {
   const progress = Math.min(force / pop, 1)
-  const scale = 1 + force * 0.22
-  const diameter = DISC * scale * (1 + 0.3 * (1 - progress))
+  const diameter = DISC * (1 + force * GROW) * (1 + 0.3 * (1 - progress))
   ring.style.opacity = String(Math.max(0, (progress - 0.4) / 0.6))
   ring.style.transform = `scale(${diameter / WRAP})`
   ring.toggleAttribute('data-closed', progress >= 1)
 }
 
-new Forcify(disc)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)')
+
+/** Rings off the disc's edge: one faint one at peek, three hard ones at pop. */
+function shockwave(force, count, opacity) {
+  if (reduced.matches) return
+  const diameter = DISC * (1 + force * GROW)
+  for (let i = 0; i < count; i++) {
+    const wave = document.createElement('span')
+    wave.className = 'shock'
+    wave.style.setProperty('--d', `${diameter}px`)
+    wave.style.setProperty('--o', String(opacity * (1 - i * 0.25)))
+    wave.style.setProperty('--to', String(1.8 + i * 0.45))
+    wave.style.animationDelay = `${i * 90}ms`
+    wave.addEventListener('animationend', () => wave.remove())
+    disc.parentElement.append(wave)
+  }
+}
+
+function flash() {
+  veil.removeAttribute('data-flash')
+  void veil.offsetWidth // restart the animation
+  veil.setAttribute('data-flash', '')
+}
+
+new Forcify(disc, { CSS_VARIABLE: false })
+  .on('forcestart', () => root.classList.remove('releasing'))
   .on('force', (e) => {
+    // Letting go springs back (and a little past) instead of snapping.
+    if (e.force === 0) root.classList.add('releasing')
+    setHeroForce(e.force)
     paintRing(e.force, e.instance.options.POP_THRESHOLD)
-    readout.innerHTML = `<b>${e.force.toFixed(3)}</b><span>${e.source} · ${e.pointerType}${e.popped ? ' · pop' : e.peeked ? ' · peek' : ''}</span>`
+    value.value = e.force.toFixed(3)
+    readout.textContent = `${e.source} · ${e.pointerType}${e.popped ? ' · pop' : e.peeked ? ' · peek' : ''}`
+  })
+  .on('peek', (e) => shockwave(e.force, 1, 0.3))
+  .on('pop', (e) => {
+    shockwave(e.force, 3, 0.7)
+    flash()
   })
   .on('forceend', (e) => {
     paintRing(0, 1)
-    readout.innerHTML = `<b>0.000</b><span>max ${e.maxForce.toFixed(3)} · ${e.source}${e.popped ? ' · popped' : ''}</span>`
+    readout.textContent = `max ${e.maxForce.toFixed(3)} · ${e.source}${e.popped ? ' · popped' : ''}`
   })
 
 const install = document.querySelector('.install')
